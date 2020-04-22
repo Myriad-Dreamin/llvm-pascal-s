@@ -8,19 +8,39 @@
 #include <string_view>
 #include <cstdarg>
 #include <logger.h>
+#include <cstring>
 
 struct Lexer : public yyFlexLexer {
-    int xxx=1;
+    int xxx = 1;
     Logger logger;
+
+    Lexer(std::istream *in = nullptr, std::ostream *out = nullptr)
+        : yyFlexLexer(in, out) {}
 
 public:
 
     int yylex();
 
+    char *latest = nullptr;
+
+    ~Lexer() override {
+        clear_latest();
+    }
+
 private:
+    void clear_latest() {
+        if (latest) {
+            delete[] latest;
+            latest = nullptr;
+        }
+    }
+
     int addIdentifier() {
-        printf("found identifier %s %d\n", yytext, xxx);
-        logger.warningf(__FILE__ " %s:%d: todo!!!\n", __FUNCTION__, __LINE__);
+//        logger.warningf(__FILE__ " %s:%d: todo!!!\n", __FUNCTION__, __LINE__);
+        clear_latest();
+        int l = strlen(yytext);
+        latest = new char[l];
+        strcpy(latest, yytext);
         return 1;
     }
 
