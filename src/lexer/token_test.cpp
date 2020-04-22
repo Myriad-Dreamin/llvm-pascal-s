@@ -23,8 +23,3 @@ INSTANTIATE_TEST_SUITE_P(TestIdentifiers, GoodTokenTest, testing::Values( /* NOL
         TokenTestCase{"a", "a"},
         TokenTestCase{"a ", "a"}
 ));
-
-int main(int argc, char *argv[]) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

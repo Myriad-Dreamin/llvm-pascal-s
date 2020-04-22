@@ -1,0 +1,21 @@
+
+cmake_minimum_required(VERSION 3.15)
+project(pascal-s)
+
+add_library(gtest-main STATIC test/test-main.cpp)
+target_link_libraries(gtest-main gtest)
+target_include_directories(gtest-main SYSTEM PUBLIC gtest gmock)
+get_filename_component(GTEST_MAIN_FILE test/test-main.cpp ABSOLUTE)
+function(add_gtest test_name)
+    add_executable(${test_name} ${test_name}.cpp ${ARGN})
+    target_link_libraries(${test_name} gtest-main)
+    if (MINGW)
+        target_link_libraries(${test_name} -static-libgcc -static-libstdc++)
+    endif()
+    add_test(NAME ${test_name} COMMAND ${test_name})
+endfunction()
+
+add_subdirectory(lexer)
+add_subdirectory(parser)
+add_subdirectory(target-llvm)
+add_subdirectory(target-c)
