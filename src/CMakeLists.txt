@@ -4,7 +4,7 @@ project(pascal-s)
 
 add_library(gtest-main STATIC test/test-main.cpp)
 target_link_libraries(gtest-main gtest)
-target_include_directories(gtest-main SYSTEM PUBLIC gtest gmock)
+target_include_directories(gtest-main SYSTEM PUBLIC gtest gmock fmt)
 get_filename_component(GTEST_MAIN_FILE test/test-main.cpp ABSOLUTE)
 function(add_gtest test_name)
     add_executable(${test_name} ${test_name}.cpp ${ARGN})

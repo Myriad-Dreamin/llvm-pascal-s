@@ -15,6 +15,8 @@ endif()
 
 add_subdirectory(googletest)
 # GTest End
+add_subdirectory(fmt)
+include_directories(fmt/include)
 
 # include files
 include_directories(include)

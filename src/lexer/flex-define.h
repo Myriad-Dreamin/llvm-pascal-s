@@ -19,7 +19,7 @@ struct Lexer : public yyFlexLexer {
 
 public:
 
-    int yylex();
+    int yylex() final;
 
     char *latest = nullptr;
 
@@ -36,7 +36,7 @@ private:
     }
 
     int addIdentifier() {
-//        logger.warningf(__FILE__ " %s:%d: todo!!!\n", __FUNCTION__, __LINE__);
+//        logger.warningf(_LMETA, "todo!!!\n");
         clear_latest();
         int l = strlen(yytext);
         latest = new char[l];
@@ -46,37 +46,37 @@ private:
 
     int addReal() {
         printf("found Real %s %d\n", yytext, xxx);
-        logger.warningf(__FILE__ " %s:%d: todo!!!\n", __FUNCTION__, __LINE__);
+        warningf("todo!!!\n");
         return 1;
     }
 
     int addInteger() {
         printf("found Integer %s %d\n", yytext, xxx);
-        logger.warningf(__FILE__ " %s:%d: todo!!!\n", __FUNCTION__, __LINE__);
+        warningf("todo!!!\n");
         return 1;
     }
 
     int addBoolean() {
         printf("found Boolean %s %d\n", yytext, xxx);
-        logger.warningf(__FILE__ " %s:%d: todo!!!\n", __FUNCTION__, __LINE__);
+        warningf("todo!!!\n");
         return 1;
     }
 
     int addKeyword() {
         printf("found Keyword %s %d\n", yytext, xxx);
-        logger.warningf(__FILE__ " %s:%d: todo!!!\n", __FUNCTION__, __LINE__);
+        warningf("todo!!!\n");
         return 1;
     }
 
     int addMarker() {
         printf("found Marker %s %d\n", yytext, xxx);
-        logger.warningf(__FILE__ " %s:%d: todo!!!\n", __FUNCTION__, __LINE__);
+        warningf("todo!!!\n");
         return 1;
     }
 
     int addChar() {
         printf("found Character %s %d\n", yytext, xxx);
-        logger.warningf(__FILE__ " %s:%d: todo!!!\n", __FUNCTION__, __LINE__);
+        warningf("todo!!!\n");
         return 1;
     }
 };
