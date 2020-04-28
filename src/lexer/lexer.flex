@@ -4,7 +4,7 @@
 %option yyclass="Lexer"
 
 %{
-#include "flex-define.h"
+#include <pascal-s/lexer.h>
 %}
 
 

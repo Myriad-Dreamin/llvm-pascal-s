@@ -1,7 +1,7 @@
 
-#include <token.h>
+#include <pascal-s/token.h>
 #include <cstdio>
-#include "flex-lexer.h"
+#include <pascal-s/lexer.h>
 
 int main() {
 

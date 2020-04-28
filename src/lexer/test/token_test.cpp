@@ -1,6 +1,6 @@
 
 #include <gtest/gtest.h>
-#include "lexer.h"
+#include <pascal-s/lexer.h>
 
 struct TokenTestCase {
     const char *input;

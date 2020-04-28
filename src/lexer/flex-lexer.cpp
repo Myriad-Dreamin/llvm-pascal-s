@@ -457,7 +457,7 @@ static const flex_int16_t yy_chk[156] =
 #define YY_RESTORE_YY_MORE_OFFSET
 #line 1 "lexer.flex"
 #line 7 "lexer.flex"
-#include "flex-define.h"
+#include <pascal-s/lexer.h>
 #line 462 "flex-lexer.h"
 #line 463 "flex-lexer.h"
 
@@ -798,46 +798,47 @@ case YY_STATE_EOF(INITIAL):
 				break;
 				}
 
-			case EOB_ACT_CONTINUE_SCAN:
-				(yy_c_buf_p) =
-					(yytext_ptr) + yy_amount_of_matched_text;
+                case EOB_ACT_CONTINUE_SCAN:
+                    (yy_c_buf_p) =
+                            (yytext_ptr) + yy_amount_of_matched_text;
 
-				yy_current_state = yy_get_previous_state(  );
+                    yy_current_state = yy_get_previous_state();
 
-				yy_cp = (yy_c_buf_p);
-				yy_bp = (yytext_ptr) + YY_MORE_ADJ;
-				goto yy_match;
+                    yy_cp = (yy_c_buf_p);
+                    yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+                    goto yy_match;
 
-			case EOB_ACT_LAST_MATCH:
-				(yy_c_buf_p) =
-				&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)];
+                case EOB_ACT_LAST_MATCH:
+                    (yy_c_buf_p) =
+                            &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)];
 
-				yy_current_state = yy_get_previous_state(  );
+                    yy_current_state = yy_get_previous_state();
 
-				yy_cp = (yy_c_buf_p);
-				yy_bp = (yytext_ptr) + YY_MORE_ADJ;
-				goto yy_find_action;
-			}
-		break;
-		}
+                    yy_cp = (yy_c_buf_p);
+                    yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+                    goto yy_find_action;
+            }
+            break;
+        }
 
-	default:
-		YY_FATAL_ERROR(
-			"fatal flex scanner internal error--no action found" );
-	} /* end of action switch */
-		} /* end of scanning one token */
-	} /* end of user's declarations */
-} /* end of yylex */
+            default:
+                YY_FATAL_ERROR(
+                        "fatal flex scanner internal error--no action found");
+        } /* end of action switch */
+        } /* end of scanning one token */
+    } /* end of user's declarations */
+}
+
+/* end of yylex */
 
 /* The contents of this function are C++ specific, so the () macro is not used.
  * This constructor simply maintains backward compatibility.
  * DEPRECATED
  */
-yyFlexLexer::yyFlexLexer( std::istream* arg_yyin, std::ostream* arg_yyout ):
-	yyin(arg_yyin ? arg_yyin->rdbuf() : std::cin.rdbuf()),
-	yyout(arg_yyout ? arg_yyout->rdbuf() : std::cout.rdbuf())
-{
-	ctor_common();
+yyFlexLexer::yyFlexLexer(std::istream *arg_yyin, std::ostream *arg_yyout) :
+        yyin(arg_yyin ? arg_yyin->rdbuf() : std::cin.rdbuf()),
+        yyout(arg_yyout ? arg_yyout->rdbuf() : std::cout.rdbuf()) {
+    ctor_common();
 }
 
 /* The contents of this function are C++ specific, so the () macro is not used.
