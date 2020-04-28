@@ -9,14 +9,20 @@ set(CMAKE_CXX_STANDARD 17)
 # GTest Begin
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(LIBRARIES ${LIBRARIES} " " pthread)
-else()
+else ()
     message("!!! warning: not using pthread " "(host: " ${CMAKE_SYSTEM_NAME} ")!!!")
-endif()
+endif ()
 
 add_subdirectory(googletest)
 # GTest End
+
+#fmt
 add_subdirectory(fmt)
 include_directories(fmt/include)
+
+#flex
+include_directories(flex/src)
+
 
 # include files
 include_directories(include)
