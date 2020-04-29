@@ -1,6 +1,6 @@
 
 
 lexer:
-	build.sh
+	./build.sh
 
 .PHONY: lexer

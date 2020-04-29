@@ -1,6 +1,6 @@
-#line 2 "flex-lexer.h"
+#line 2 "flex-lexer.cpp"
 
-#line 4 "flex-lexer.h"
+#line 4 "flex-lexer.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -295,17 +295,20 @@ void yyfree ( void *  );
 #define YY_AT_BOL() (YY_CURRENT_BUFFER_LVALUE->yy_at_bol)
 
 /* Begin user sect3 */
+#define YY_SKIP_YYWRAP
 typedef flex_uint8_t YY_CHAR;
 
 #define yytext_ptr yytext
 #define YY_INTERACTIVE
 
 #include <FlexLexer.h>
-int yyFlexLexer::yylex()
-	{
-	LexerError( "yyFlexLexer::yylex invoked but %option yyclass used" );
-	return 0;
-	}
+
+int yyFlexLexer::yywrap() { return 1; }
+
+int yyFlexLexer::yylex() {
+    LexerError("yyFlexLexer::yylex invoked but %option yyclass used");
+    return 0;
+}
 
 #define YY_DECL int Lexer::yylex()
 
@@ -456,10 +459,12 @@ static const flex_int16_t yy_chk[156] =
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 #line 1 "lexer.flex"
-#line 7 "lexer.flex"
+#line 8 "lexer.flex"
+
 #include <pascal-s/lexer.h>
-#line 462 "flex-lexer.h"
-#line 463 "flex-lexer.h"
+
+#line 465 "flex-lexer.cpp"
+#line 466 "flex-lexer.cpp"
 
 #define INITIAL 0
 
@@ -469,6 +474,7 @@ static const flex_int16_t yy_chk[156] =
  * The user has a chance to override it with an option.
  */
 #include <unistd.h>
+
 #endif
 
 #ifndef YY_EXTRA_TYPE
@@ -591,9 +597,9 @@ YY_DECL
 		}
 
 	{
-#line 11 "lexer.flex"
+#line 12 "lexer.flex"
 
-#line 597 "flex-lexer.h"
+#line 600 "flex-lexer.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -652,50 +658,50 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 12 "lexer.flex"
+#line 13 "lexer.flex"
 { return addKeyword(); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 14 "lexer.flex"
+#line 15 "lexer.flex"
 { return addBoolean(); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 15 "lexer.flex"
+#line 16 "lexer.flex"
 { return addIdentifier(); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 16 "lexer.flex"
+#line 17 "lexer.flex"
 { return addReal(); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 17 "lexer.flex"
+#line 18 "lexer.flex"
 { return addReal(); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 18 "lexer.flex"
+#line 19 "lexer.flex"
 { return addInteger(); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 19 "lexer.flex"
+#line 20 "lexer.flex"
 { return addChar(); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 21 "lexer.flex"
+#line 22 "lexer.flex"
 { return addMarker(); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 23 "lexer.flex"
+#line 24 "lexer.flex"
 ECHO;
 	YY_BREAK
-#line 699 "flex-lexer.h"
+#line 702 "flex-lexer.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -788,15 +794,12 @@ case YY_STATE_EOF(INITIAL):
 
 					yy_act = YY_STATE_EOF(YY_START);
 					goto do_action;
-					}
-
-				else
-					{
-					if ( ! (yy_did_buffer_switch_on_eof) )
-						YY_NEW_FILE;
-					}
-				break;
-				}
+                    } else {
+                    if (!(yy_did_buffer_switch_on_eof))
+                        YY_NEW_FILE;
+                }
+                    break;
+                }
 
                 case EOB_ACT_CONTINUE_SCAN:
                     (yy_c_buf_p) =
@@ -827,9 +830,7 @@ case YY_STATE_EOF(INITIAL):
         } /* end of action switch */
         } /* end of scanning one token */
     } /* end of user's declarations */
-}
-
-/* end of yylex */
+} /* end of yylex */
 
 /* The contents of this function are C++ specific, so the () macro is not used.
  * This constructor simply maintains backward compatibility.
@@ -1659,8 +1660,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 23 "lexer.flex"
+#line 24 "lexer.flex"
 
 
-int yyFlexLexer::yywrap() { return 1; }
 

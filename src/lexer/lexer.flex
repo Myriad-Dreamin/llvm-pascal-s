@@ -2,6 +2,7 @@
 
 %option c++
 %option yyclass="Lexer"
+%option noyywrap
 
 %{
 #include <pascal-s/lexer.h>
@@ -22,4 +23,3 @@ true|false { return addBoolean(); }
 
 %%
 
-int yyFlexLexer::yywrap() { return 1; }

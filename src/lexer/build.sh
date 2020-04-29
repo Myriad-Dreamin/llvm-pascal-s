@@ -1,3 +1,5 @@
-flex -o flex-lexer.h lexer.flex
-sed flex-lexer.h -e 's/#define yyFlexLexer yyFlexLexer//g' > flex-lexer.h.tmp
-mv flex-lexer.h.tmp flex-lexer.h
+out=flex-lexer.cpp
+
+flex -o ${out} lexer.flex
+sed ${out} -e 's/#define yyFlexLexer yyFlexLexer//g' > ${out}.tmp
+mv ${out}.tmp ${out}
