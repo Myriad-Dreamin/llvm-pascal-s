@@ -1,6 +1,8 @@
 
 #include <pascal-s/token.h>
 #include <cstring>
+#include <fmt/core.h>
+#include <cassert>
 
 void deleteToken(Token *pToken) {
     switch (pToken->type) {
@@ -25,6 +27,32 @@ void deleteToken(Token *pToken) {
         default:
             throw RuntimeReinterpretTokenException(pToken);
     }
+}
+
+std::string convertToString(const Token *pToken) {
+    switch (pToken->type) {
+        case TokenType::Keyword:
+            return fmt::format("{{ .type = Keyword .key_type = {} }}",
+                               reinterpret_cast<const Keyword *>(pToken)->key_type);
+        case TokenType::ConstantString:
+            return fmt::format("{{ .type = ConstantString .content = {} }}",
+                               reinterpret_cast<const ConstantString *>(pToken)->content);
+        case TokenType::ConstantReal:
+            return fmt::format("{{ .type = ConstantReal .content = {} }}",
+                               reinterpret_cast<const ConstantReal *>(pToken)->content);
+        case TokenType::ConstantInteger:
+            return fmt::format("{{ .type = ConstantInteger .content = {} }}",
+                               reinterpret_cast<const ConstantInteger *>(pToken)->content);
+        case TokenType::ConstantChar:
+            return fmt::format("{{ .type = ConstantChar .content = {} }}",
+                               reinterpret_cast<const ConstantChar *>(pToken)->content);
+        case TokenType::Identifier:
+            return fmt::format("{{ .type = Identifier .content = {} }}",
+                               reinterpret_cast<const Identifier *>(pToken)->content);
+        default:
+            throw RuntimeReinterpretTokenException(pToken);
+    }
+    assert(false);
 }
 
 ConstantReal::ConstantReal(const char *creal) : Token() {

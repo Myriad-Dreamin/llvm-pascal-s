@@ -19,6 +19,7 @@ int Lexer::addIdentifier() {
     std::cout
             << (fmt::format("found identifier {} {} \t in line {}\n", yytext, current_offset - line_offset, yylineno));
     auto tok = new Identifier(yytext);
+
     return addToken(tok);
 }
 

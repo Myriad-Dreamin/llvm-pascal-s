@@ -17,16 +17,7 @@
 
 
 testing::Message &operator<<(testing::Message &msg, const Token *tok) {
-    msg << "{ .type = " << fmt::format("{}", tok->type);
-    switch (tok->type) {
-        case TokenType::Identifier:
-            msg << " " << reinterpret_cast<const Identifier *>(tok)->content;
-            break;
-        default:
-            assert(false);
-    }
-    msg << " }";
-    return msg;
+    return msg << convertToString(tok);
 }
 
 #define equal_field(val1, val2) do{if (val1 != val2) {\

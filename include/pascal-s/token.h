@@ -127,7 +127,10 @@ struct Marker : public Token {
 
     ~Marker();
 };
+
 void deleteToken(Token *pToken);
+
+std::string convertToString(const Token *pToken);
 
 #endif
 

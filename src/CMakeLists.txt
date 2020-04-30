@@ -27,20 +27,21 @@ endfunction()
 # token/exception source files -> compile to lib to reduce compile time
 file(GLOB PASCAL_S_LOCAL_LIBRARY_SOURCE_FILES exception/*.cpp exception/*.cc token/*.cpp token/*.cc)
 add_library(pascal-s-local ${PASCAL_S_LOCAL_LIBRARY_SOURCE_FILES})
-add_subdirectory(exception/test)
-
+target_link_libraries(pascal-s-local fmt)
 function(link_pascal_s_local target)
-    target_link_libraries(${target} fmt pascal-s-local)
+    target_link_libraries(${target} pascal-s-local)
 endfunction()
+add_subdirectory(token/test)
+add_subdirectory(exception/test)
 
 # lexer source files -> compile to lib to reduce compile time
 file(GLOB PASCAL_S_LEXER_SOURCE_FILES lexer/*.cpp lexer/*.cc)
 add_library(pascal-s-lexer ${PASCAL_S_LEXER_SOURCE_FILES})
 link_pascal_s_local(pascal-s-lexer)
-add_subdirectory(lexer/test)
 function(link_pascal_s_lexer target)
     target_link_libraries(${target} pascal-s-lexer)
 endfunction()
+add_subdirectory(lexer/test)
 
 # other pascal-s compiler layers
 add_subdirectory(parser)
