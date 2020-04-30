@@ -27,6 +27,40 @@ void deleteToken(Token *pToken) {
     }
 }
 
+ConstantReal::ConstantReal(const char *creal) : Token() {
+    this->type = TokenType::ConstantReal;
+    int l = strlen(creal);
+    content = new char[l + 1];
+    strcpy(const_cast<char *>(content), creal);
+}
+
+ConstantReal::~ConstantReal() {
+    delete[]content;
+}
+
+ConstantInteger::ConstantInteger(const char *cint) : Token() {
+    this->type = TokenType::ConstantInteger;
+    int l = strlen(cint);
+    this->content = new char[l + 1];
+    strcpy(const_cast<char *>(content), cint);
+}
+
+ConstantInteger::~ConstantInteger() {
+    delete[]content;
+}
+
+ConstantChar::ConstantChar(const char *cchar) : Token() {
+    this->type = TokenType::ConstantChar;
+    int l = strlen(cchar);
+    this->content = new char[l + 1];
+    strcpy(const_cast<char *>(content), cchar);
+
+}
+
+ConstantChar::~ConstantChar() {
+    delete[]content;
+}
+
 Identifier::Identifier(const char *identifier) : Token() {
     this->type = TokenType::Identifier;
     int l = strlen(identifier);
@@ -35,5 +69,27 @@ Identifier::Identifier(const char *identifier) : Token() {
 }
 
 Identifier::~Identifier() {
+    delete[]content;
+}
+
+ConstantBoolean::ConstantBoolean(const char *cbool) : Token() {
+    this->type = TokenType::ConstantBoolean;
+    int l = strlen(cbool);
+    content = new char[l + 1];
+    strcpy(const_cast<char *>(content), cbool);
+}
+
+ConstantBoolean::~ConstantBoolean() {
+    delete[]content;
+}
+
+Marker::Marker(const char *cmarker) : Token() {
+    this->type = TokenType::Marker;
+    int l = strlen(cmarker);
+    content = new char[l+1];
+    strcpy(const_cast<char *>(content), cmarker);
+}
+
+Marker::~Marker() {
     delete[]content;
 }

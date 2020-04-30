@@ -9,6 +9,8 @@
 #include "logger.h"
 #include "token.h"
 
+
+
 class Lexer : public yyFlexLexer {
 public:
     using token_container = std::vector<Token *>;
@@ -23,7 +25,7 @@ public:
 
 protected:
     int yylex() final;
-
+    line_t numOfLine = 0;
     int xxx = 1;
     Logger logger;
 
@@ -44,6 +46,8 @@ private:
     int addMarker();
 
     int addChar();
+
+    int addLine();
 };
 
 class FullInMemoryLexer : public Lexer {
