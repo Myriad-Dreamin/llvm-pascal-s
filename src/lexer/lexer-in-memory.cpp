@@ -41,6 +41,8 @@ const FullInMemoryLexer::token_container &FullInMemoryLexer::get_all_tokens() {
 }
 
 int FullInMemoryLexer::addToken(Token *token) {
+    token->line = yylineno;
+    token->column = current_offset - line_offset;
     tokens.push_back(token);
     return 1;
 }

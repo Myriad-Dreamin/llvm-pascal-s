@@ -31,7 +31,7 @@ struct Token {
     TokenType type;
     //todo: add line, column info
     line_t line;
-//    column_t column;
+    column_t column;
 };
 
 enum class KeywordType {

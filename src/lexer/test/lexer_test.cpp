@@ -86,6 +86,10 @@ INSTANTIATE_TEST_SUITE_P(Simple, GoodLexerGetAllTokensTest, testing::Values( /* 
         LexerGetAllTokensTestCase{"a ",
                                   new std::vector<Token *>({new Identifier("a")})},
         LexerGetAllTokensTestCase{"a b",
-                                  new std::vector<Token *>({new Identifier("a"), new Identifier("b")})}
+                                  new std::vector<Token *>({new Identifier("a"), new Identifier("b")})},
+        LexerGetAllTokensTestCase{"a b\n a",
+                                  new std::vector<Token *>({
+                                                                   new Identifier("a"), new Identifier("b"),
+                                                                   new Identifier("a")})}
 ));
 

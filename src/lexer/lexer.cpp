@@ -16,54 +16,50 @@ Lexer::~Lexer() {
 
 
 int Lexer::addIdentifier() {
-    printf("found identifier %s %d \t in line %d\n", yytext, xxx, numOfLine);
-    Identifier *tok = new Identifier(yytext);
-    tok->line = numOfLine;
+    std::cout
+            << (fmt::format("found identifier {} {} \t in line {}\n", yytext, current_offset - line_offset, yylineno));
+    auto tok = new Identifier(yytext);
     return addToken(tok);
 }
 
 int Lexer::addReal() {
-    printf("found Real %s %d \t in line %d\n", yytext, xxx, numOfLine);
-    ConstantReal *tok = new ConstantReal(yytext);
-    tok->line = numOfLine;
+    std::cout << (fmt::format("found Real {} {} \t in line {}\n", yytext, current_offset - line_offset, yylineno));
+    auto tok = new ConstantReal(yytext);
     return addToken(tok);
 }
 
 int Lexer::addInteger() {
-    printf("found Integer %s %d \t in line %d\n", yytext, xxx, numOfLine);
-    ConstantInteger *tok = new ConstantInteger(yytext);
-    tok->line = numOfLine;
+    std::cout << (fmt::format("found Integer {} {} \t in line {}\n", yytext, current_offset - line_offset, yylineno));
+    auto tok = new ConstantInteger(yytext);
     return addToken(tok);
 }
 
 int Lexer::addBoolean() {
-    printf("found Boolean %s %d \t in line %d\n", yytext, xxx, numOfLine);
-    ConstantBoolean *tok = new ConstantBoolean(yytext);
-    tok->line = numOfLine;
+    std::cout << (fmt::format("found Boolean {} {} \t in line {}\n", yytext, current_offset - line_offset, yylineno));
+    auto tok = new ConstantBoolean(yytext);
     return addToken(tok);
 }
 
 int Lexer::addKeyword() {
-    printf("found Keyword %s %d\n", yytext, xxx);
+    std::cout << (fmt::format("found Keyword {} {} \t in line {} \n", yytext, current_offset - line_offset, yylineno));
     warningf("todo!!!\n");
     return 1;
 }
 
 int Lexer::addMarker() {
-    printf("found Marker %s %d \t in line %d \n", yytext, xxx, numOfLine);
-    Marker *tok = new Marker(yytext);
-    tok->line = numOfLine;
+    std::cout << (fmt::format("found Marker {} {} \t in line {} \n", yytext, current_offset - line_offset, yylineno));
+    auto tok = new Marker(yytext);
     return addToken(tok);
 }
 
 int Lexer::addChar() {
-    printf("found Character %s %d \t in line %d \n", yytext, xxx, numOfLine);
-    ConstantChar *tok = new ConstantChar(yytext);
-    tok->line = numOfLine;
+    std::cout
+            << (fmt::format("found Character {} {} \t in line {} \n", yytext, current_offset - line_offset, yylineno));
+    auto tok = new ConstantChar(yytext);
     return addToken(tok);
 }
 
-int Lexer::addLine() {
-    numOfLine++;
+int Lexer::recordNewLine() {
+    line_offset = current_offset;
     return 1;
 }

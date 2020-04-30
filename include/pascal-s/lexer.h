@@ -25,9 +25,8 @@ public:
 
 protected:
     int yylex() final;
-    line_t numOfLine = 0;
-    int xxx = 1;
     Logger logger;
+    column_t current_offset = 0, line_offset = 0;
 
     virtual int addToken(Token *token) = 0;
 
@@ -47,7 +46,7 @@ private:
 
     int addChar();
 
-    int addLine();
+    int recordNewLine();
 };
 
 class FullInMemoryLexer : public Lexer {

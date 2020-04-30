@@ -3,9 +3,11 @@
 %option c++
 %option yyclass="Lexer"
 %option noyywrap
+%option yylineno
 
 %{
 #include <pascal-s/lexer.h>
+#include "gulp.h"
 %}
 
 
@@ -18,6 +20,7 @@ true|false { return addBoolean(); }
 [0-9]+\.[0-9]* { return addReal(); }
 [0-9]+ { return addInteger(); }
 '.*' { return addChar(); }
+\n { return recordNewLine(); }
 
 \<>|\<=|>=|:=|\.\.|[()\[\]<=>,.;:+\-*/] { return addMarker(); }
 
