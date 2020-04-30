@@ -12,23 +12,11 @@ Lexer::Lexer(std::istream *in, std::ostream *out)
 
 
 Lexer::~Lexer() {
-    clear_latest();
-    for (auto &token :tokens) {
-        deleteToken(token);
-    }
 }
 
-int Lexer::addToken(Token *token) {
-    tokens.push_back(token);
-    return 1;
-}
 
 int Lexer::addIdentifier() {
-    clear_latest();
-    int l = strlen(yytext);
-    latest = new char[l];
-    strcpy(latest, yytext);
-    return 1;
+    return addToken(new Identifier(yytext));
 }
 
 int Lexer::addReal() {
@@ -66,20 +54,3 @@ int Lexer::addChar() {
     warningf("todo!!!\n");
     return 1;
 }
-
-void Lexer::clear_latest() {
-    if (latest) {
-        delete[] latest;
-        latest = nullptr;
-    }
-}
-
-const Token *Lexer::next_token() {
-    throw std::runtime_error("todo");
-}
-
-const Lexer::token_container &Lexer::get_all_tokens() {
-    throw std::runtime_error("todo");
-}
-
-

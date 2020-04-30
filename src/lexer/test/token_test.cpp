@@ -13,10 +13,11 @@ TEST_P(GoodTokenTest, WillNotThrowException) /* NOLINT */
 {
     auto &param = GetParam();
     std::stringstream in(param.input);
-    Lexer lexer(&in);
-
-    ASSERT_NE(lexer.yylex(), 0);
-    ASSERT_STREQ(lexer.latest, param.expected);
+    FullInMemoryLexer lexer(&in);
+    auto tok = lexer.next_token();
+    ASSERT_NE(tok, nullptr);
+    ASSERT_EQ(tok->type, TokenType::Identifier);
+    ASSERT_STREQ(reinterpret_cast<const Identifier *>(tok)->content, param.expected);
 }
 
 INSTANTIATE_TEST_SUITE_P(TestIdentifiers, GoodTokenTest, testing::Values( /* NOLINT */

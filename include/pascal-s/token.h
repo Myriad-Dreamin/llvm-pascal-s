@@ -17,6 +17,7 @@ enum class TokenType {
     ConstantReal,
     ConstantInteger,
     ConstantBoolean,
+    Identifier,
 
     Length
 };
@@ -88,6 +89,13 @@ struct ConstantChar : public Token {
     const char *content;
 };
 
+struct Identifier : public Token {
+    const char *content;
+
+    Identifier(const char *content);
+
+    ~Identifier();
+};
 
 void deleteToken(Token *pToken);
 
