@@ -13,7 +13,7 @@ class Lexer : public yyFlexLexer {
 public:
     using token_container = std::vector<Token *>;
 
-    Lexer(std::istream *in = nullptr, std::ostream *out = nullptr);
+    explicit Lexer(std::istream *in = nullptr, std::ostream *out = nullptr);
 
     ~Lexer() override;
 
@@ -27,14 +27,9 @@ protected:
     int xxx = 1;
     Logger logger;
 
-    // todo: remove
-    char *latest = nullptr;
-
     virtual int addToken(Token *token) = 0;
 
 private:
-
-    void clear_latest();
 
     int addIdentifier();
 
@@ -55,7 +50,7 @@ class FullInMemoryLexer : public Lexer {
     token_container tokens;
     int64_t current_token_cursor;
 public:
-    FullInMemoryLexer(std::istream *in = nullptr, std::ostream *out = nullptr);
+    explicit FullInMemoryLexer(std::istream *in = nullptr, std::ostream *out = nullptr);
 
     ~FullInMemoryLexer() override;
 
@@ -67,8 +62,6 @@ public:
 
 private:
     int addToken(Token *token) final;
-
-    bool lex_new_token();
 };
 
 #endif //PASCAL_S_LEXER_H
