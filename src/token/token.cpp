@@ -156,6 +156,7 @@ keyword_mapping key_map = {
         keyword_mapping::value_type{"begin", KeywordType::Begin},
         keyword_mapping::value_type{"function", KeywordType::Function},
         keyword_mapping::value_type{"procedure", KeywordType::Procedure},
+        keyword_mapping::value_type{"program", KeywordType::Program},
         keyword_mapping::value_type{"var", KeywordType::Var},
         keyword_mapping::value_type{"const", KeywordType::Const}
 };

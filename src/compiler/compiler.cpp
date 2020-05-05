@@ -4,6 +4,7 @@
 
 #include <dep/opt.h>
 #include <iostream>
+#include <fstream>
 #include <fmt/core.h>
 #include <pascal-s/features.h>
 #include <pascal-s/lexer.h>
@@ -54,6 +55,31 @@ struct CompilerOptions {
         parser.addOpts("out-token", &out_with_token,
                        "Output tokens, enum of {json, yml, fmt, binary, console}",
                        cat_compile_options, "binary", "tf");
+    }
+
+    ~CompilerOptions() {
+        for (auto &file : files) {
+            delete file;
+        }
+    }
+
+
+    std::vector<std::fstream *> files;
+
+    std::istream &get_source() {
+        if (source_path == "stdin") {
+            return std::cin;
+        } else {
+            auto fs = new std::fstream(source_path);
+            if (fs->fail()) {
+                delete fs;
+                std::cout << strerror(errno) << ": " << source_path;
+                exit(errno);
+            }
+
+            files.push_back(fs);
+            return *fs;
+        }
     }
 };
 
@@ -121,10 +147,7 @@ int main(int argc, const char *argv[]) {
 
     CompilerOptions options(dep::_global);
     dep::parseOpts(argc, argv);
-
-    std::stringstream ss("array[1..2] of real");
-
-    FullInMemoryLexer lexer(&ss, &std::cout);
+    FullInMemoryLexer lexer(&options.get_source(), &std::cout);
     LexerProxy lexer_proxy(lexer);
 
     Compiler compiler(

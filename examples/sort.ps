@@ -1,0 +1,28 @@
+program sort (input, output);
+  var a: array[0..10] of integer;
+  x : integer;
+procedure read_array;
+  var i: integer;
+  begin
+    for i := 1 to 9 do read(a[i])
+  end;
+procedure exchange (i, j: integer)
+  begin
+    x := a[i]; a[i] := a[j]; a[j] := x;
+  end
+
+procedure quick_sort(m, n: integer);
+  var k, v: integer;
+
+  function partition(y, z: integer) : integer;
+    var i, j : integer;
+    begin
+      exchange(i, j);
+    end
+  begin
+    k = partition(m, n);
+    quick_sort(m, k-1);
+    quick_sort(k+1, n);
+  end; { quick_sort end }
+  begin read_array; quick_sort(1, 9);
+  end {sort}
