@@ -116,7 +116,7 @@ ConstantBoolean::ConstantBoolean(const char *cbool) : Token() {
     int l = strlen(cbool);
     this->content = new char[l + 1];
     strcpy(const_cast<char *>(content), cbool);
-    if (this->content[0] == 't') 
+    if (this->content[0] == 't')
         this->attr = true;
     else if (this->content[0] == 'f')
         this->attr = false;
@@ -137,4 +137,36 @@ Marker::Marker(const char *cmarker) : Token() {
 
 Marker::~Marker() {
     delete[]content;
+}
+
+keyword_mapping key_map = {
+        keyword_mapping::value_type{"to", KeywordType::To},
+        keyword_mapping::value_type{"do", KeywordType::Do},
+        keyword_mapping::value_type{"of", KeywordType::Of},
+        keyword_mapping::value_type{"for", KeywordType::For},
+        keyword_mapping::value_type{"else", KeywordType::Else},
+        keyword_mapping::value_type{"if", KeywordType::If},
+        keyword_mapping::value_type{"then", KeywordType::Then},
+        keyword_mapping::value_type{"char", KeywordType::Char},
+        keyword_mapping::value_type{"boolean", KeywordType::Boolean},
+        keyword_mapping::value_type{"real", KeywordType::Real},
+        keyword_mapping::value_type{"integer", KeywordType::Integer},
+        keyword_mapping::value_type{"array", KeywordType::Array},
+        keyword_mapping::value_type{"end", KeywordType::End},
+        keyword_mapping::value_type{"begin", KeywordType::Begin},
+        keyword_mapping::value_type{"function", KeywordType::Function},
+        keyword_mapping::value_type{"procedure", KeywordType::Procedure},
+        keyword_mapping::value_type{"var", KeywordType::Var},
+        keyword_mapping::value_type{"const", KeywordType::Const}
+};
+
+reverse_keyword_mapping reverse_key_map;
+
+const char *get_keyword_type_reversed(KeywordType kt) {
+    if (reverse_key_map.empty()) {
+        for (auto &kv: key_map) {
+            reverse_key_map[kv.second] = kv.first.c_str();
+        }
+    }
+    return reverse_key_map.at(kt);
 }
