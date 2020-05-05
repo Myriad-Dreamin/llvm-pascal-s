@@ -14,8 +14,7 @@ namespace feature {
     void output_tokens(const std::vector<Token *> &tokens, OStreamProxy<OStream> &os) {
         os << "out tokens\n";
         for (auto &token: tokens) {
-            os << fmt::format("{}:{}: {}\n", token->line, token->column, convertToString(token));
-
+            os.write_data(fmt::format("{}:{}: {}\n", token->line, token->column, convertToString(token)));
         }
     }
 }

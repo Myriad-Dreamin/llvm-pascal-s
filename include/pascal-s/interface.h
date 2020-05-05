@@ -8,45 +8,74 @@
 #include "token.h"
 #include <vector>
 
-#define DefaultProxyConstructor(ClassName, ProxyName, ProxyField)\
-    ProxyName &ProxyField;\
-    explicit ClassName(ProxyName &ProxyField) : ProxyField(ProxyField) {}\
-    ClassName(const ClassName &p) : ProxyField(p.ProxyField) {}\
-    ClassName(ClassName &&p) noexcept : ProxyField(p.ProxyField) {}\
+// reserve lvalue reference semantics
+// ProxyTarget
+// 1. rvalue reference: ProxyName& = ProxyTarget&& & = ProxyTarget&
+// 1. lvalue reference: ProxyName& = ProxyTarget& & = ProxyTarget&
+// 1. origin value: ProxyName& = ProxyTarget & = ProxyTarget&
+#define DefaultProxyConstructor(ClassName, ProxyName, proxy_field)\
+    ProxyName &proxy_field;\
+    explicit ClassName(ProxyName &proxy_field) : proxy_field(proxy_field) {}\
+    ClassName(const ClassName &p) : proxy_field(p.proxy_field) {}\
+    ClassName(ClassName &&p) noexcept : proxy_field(p.proxy_field) {}\
     ClassName &operator=(const ClassName &p) noexcept {\
-        ProxyField = p.ProxyField;\
+        proxy_field = p.proxy_field;\
         return *this; }\
     ClassName &operator=(ClassName &&p)  noexcept {\
-    ProxyField = p.ProxyField;\
-    return *this; }
+        proxy_field = p.proxy_field;\
+        return *this; }
 
 // auto generated LexerProxy struct
-// you can partially specialize a specified type to change Proxy Behavior
+// you can partially specialize a specified type to change proxy behavior
 template<typename Lexer>
 struct LexerProxy {
     DefaultProxyConstructor(LexerProxy, Lexer, lexer)
 
     using token_container = std::vector<Token *>;
 
+    // cursor控制peek_token的值
+
+    // 重置cursor
     [[maybe_unused]] void reset_cursor() { lexer.reset_cursor(); }
 
+    // 返回当前token的值并移动cursor
     [[maybe_unused]] const Token *next_token() { return lexer.next_token(); }
 
+    // 返回当前token的值且不移动cursor
     [[maybe_unused]] const Token *peek_token() { return lexer.peek_token(); }
 
+    // 获取所有的token
     [[maybe_unused]] const token_container &get_all_tokens() { return lexer.get_all_tokens(); }
 };
 
-// auto generated LexerProxy struct
-// you can partially specialize a specified type to change Proxy Behavior
+// auto generated OStreamProxy struct
+// you can partially specialize a specified type to change proxy behavior
 template<typename OStream>
 struct OStreamProxy {
     DefaultProxyConstructor(OStreamProxy, OStream, os)
 
+    // 定义一个OStream 为 operator<<(T data)
+
+    // T至少重载一个const char*，其他的可以看心情重载
+
+    // 重置cursor
     template<typename T>
-    [[maybe_unused]] OStreamProxy &operator<<(T v) {
-        os << v;
+    [[maybe_unused]] OStreamProxy &operator<<(T data) {
+        os << data;
         return *this;
+    }
+
+    [[maybe_unused]] OStreamProxy &write_data(const char *data) {
+        return operator<<(data);
+    }
+
+    [[maybe_unused]] OStreamProxy &write_data(const std::string &data) {
+        return operator<<(data.c_str());
+    }
+
+    template<typename T>
+    [[maybe_unused]] OStreamProxy &write_data(const T &data) {
+        return operator<<(data.c_str());
     }
 };
 
