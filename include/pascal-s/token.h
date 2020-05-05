@@ -129,7 +129,7 @@ struct ConstantBoolean : public Token {
 
 struct Marker : public Token {
     const char *content;
-    const char* attr;
+    const char *attr;
 
     Marker(const char *content);
 
@@ -139,6 +139,15 @@ struct Marker : public Token {
 void deleteToken(Token *pToken);
 
 std::string convertToString(const Token *pToken);
+
+#include <map>
+
+using keyword_mapping = std::map<std::string, KeywordType>;
+using reverse_keyword_mapping = std::map<KeywordType, const char *>;
+extern keyword_mapping key_map;
+extern reverse_keyword_mapping reverse_key_map;
+
+const char *get_keyword_type_reversed(KeywordType kt);
 
 #endif
 

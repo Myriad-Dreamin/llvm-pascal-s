@@ -19,6 +19,8 @@ public:
 
     ~Lexer() override;
 
+    virtual void reset_cursor() = 0;
+
     virtual const Token *next_token() = 0;
 
     virtual const Token *peek_token() = 0;
@@ -60,7 +62,7 @@ public:
 
     ~FullInMemoryLexer() override;
 
-    void reset_cursor();
+    void reset_cursor() final;
 
     const Token *next_token() final;
 
