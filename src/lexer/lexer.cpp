@@ -41,10 +41,11 @@ int Lexer::addBoolean() {
     return addToken(tok);
 }
 
+
 int Lexer::addKeyword() {
     std::cout << (fmt::format("found Keyword {} {} \t in line {} \n", yytext, current_offset - line_offset, yylineno));
-    warningf("todo!!!\n");
-    return 1;
+    auto tok = new Keyword(key_map.at(yytext));
+    return addToken(tok);
 }
 
 int Lexer::addMarker() {

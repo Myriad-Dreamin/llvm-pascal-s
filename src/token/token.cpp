@@ -10,6 +10,9 @@ void deleteToken(Token *pToken) {
         case TokenType::Keyword:
             delete reinterpret_cast<Keyword *>(pToken);
             break;
+        case TokenType::Marker:
+            delete reinterpret_cast<Marker *>(pToken);
+            break;
         case TokenType::ConstantString:
             delete reinterpret_cast<ConstantString *>(pToken);
             break;
@@ -34,7 +37,10 @@ std::string convertToString(const Token *pToken) {
     switch (pToken->type) {
         case TokenType::Keyword:
             return fmt::format("{{ .type = Keyword .key_type = {} }}",
-                               reinterpret_cast<const Keyword *>(pToken)->key_type);
+                               get_keyword_type_reversed(reinterpret_cast<const Keyword *>(pToken)->key_type));
+        case TokenType::Marker:
+            return fmt::format("{{ .type = Marker .marker_type = {} }}",
+                               reinterpret_cast<const Marker *>(pToken)->content);
         case TokenType::ConstantString:
             return fmt::format("{{ .type = ConstantString .content = {} }}",
                                reinterpret_cast<const ConstantString *>(pToken)->content);
