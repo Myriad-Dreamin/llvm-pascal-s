@@ -21,10 +21,13 @@ public:
 
     virtual const Token *next_token() = 0;
 
+    virtual const Token *peek_token() = 0;
+
     virtual const token_container &get_all_tokens() = 0;
 
 protected:
     int yylex() final;
+
     Logger logger;
     column_t current_offset = 0, line_offset = 0;
 
@@ -60,6 +63,8 @@ public:
     void reset_cursor();
 
     const Token *next_token() final;
+
+    const Token *peek_token() final;
 
     const token_container &get_all_tokens() final;
 

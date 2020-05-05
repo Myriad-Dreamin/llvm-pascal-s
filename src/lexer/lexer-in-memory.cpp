@@ -35,6 +35,14 @@ const Token *FullInMemoryLexer::next_token() {
     return tokens[current_token_cursor++];
 }
 
+const Token *FullInMemoryLexer::peek_token() {
+    assert(current_token_cursor <= tokens.size());
+    if (current_token_cursor == 0) {
+        return next_token();
+    }
+    return tokens[current_token_cursor - 1];
+}
+
 const FullInMemoryLexer::token_container &FullInMemoryLexer::get_all_tokens() {
     while (yylex() != 0);
     return tokens;
