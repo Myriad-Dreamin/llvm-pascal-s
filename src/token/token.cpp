@@ -3,6 +3,7 @@
 #include <cstring>
 #include <fmt/core.h>
 #include <cassert>
+#include <cstdlib>
 
 void deleteToken(Token *pToken) {
     switch (pToken->type) {
@@ -58,8 +59,10 @@ std::string convertToString(const Token *pToken) {
 ConstantReal::ConstantReal(const char *creal) : Token() {
     this->type = TokenType::ConstantReal;
     int l = strlen(creal);
-    content = new char[l + 1];
+    this->content = new char[l + 1];
     strcpy(const_cast<char *>(content), creal);
+    //bug: not safe
+    this->attr = strtod(content, NULL);
 }
 
 ConstantReal::~ConstantReal() {
@@ -71,6 +74,8 @@ ConstantInteger::ConstantInteger(const char *cint) : Token() {
     int l = strlen(cint);
     this->content = new char[l + 1];
     strcpy(const_cast<char *>(content), cint);
+    //bug: not safe
+    this->attr = strtoll(content, NULL, 10);
 }
 
 ConstantInteger::~ConstantInteger() {
@@ -82,7 +87,7 @@ ConstantChar::ConstantChar(const char *cchar) : Token() {
     int l = strlen(cchar);
     this->content = new char[l + 1];
     strcpy(const_cast<char *>(content), cchar);
-
+    this->attr = content;
 }
 
 ConstantChar::~ConstantChar() {
@@ -92,7 +97,7 @@ ConstantChar::~ConstantChar() {
 Identifier::Identifier(const char *identifier) : Token() {
     this->type = TokenType::Identifier;
     int l = strlen(identifier);
-    content = new char[l + 1];
+    this->content = new char[l + 1];
     strcpy(const_cast<char *>(content), identifier);
 }
 
@@ -103,8 +108,14 @@ Identifier::~Identifier() {
 ConstantBoolean::ConstantBoolean(const char *cbool) : Token() {
     this->type = TokenType::ConstantBoolean;
     int l = strlen(cbool);
-    content = new char[l + 1];
+    this->content = new char[l + 1];
     strcpy(const_cast<char *>(content), cbool);
+    if (this->content[0] == 't') 
+        this->attr = true;
+    else if (this->content[0] == 'f')
+        this->attr = false;
+    else
+        assert(false);
 }
 
 ConstantBoolean::~ConstantBoolean() {
@@ -114,7 +125,7 @@ ConstantBoolean::~ConstantBoolean() {
 Marker::Marker(const char *cmarker) : Token() {
     this->type = TokenType::Marker;
     int l = strlen(cmarker);
-    content = new char[l+1];
+    content = new char[l + 1];
     strcpy(const_cast<char *>(content), cmarker);
 }
 

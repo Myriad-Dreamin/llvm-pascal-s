@@ -70,6 +70,7 @@ enum class KeywordType {
 
 struct Keyword : public Token {
     KeywordType key_type;
+    const char* attr;
 
     explicit Keyword(KeywordType key_type) : Token(), key_type(key_type) {
         this->type = TokenType::Keyword;
@@ -78,10 +79,12 @@ struct Keyword : public Token {
 
 struct ConstantString: public Token {
     const char* content;
+    const char* attr;
 };
 
 struct ConstantReal: public Token {
     const char* content;
+    double attr;
 
     ConstantReal(const char *content);
 
@@ -90,6 +93,7 @@ struct ConstantReal: public Token {
 
 struct ConstantInteger : public Token {
     const char *content;
+    int64_t attr;
 
     ConstantInteger(const char *content);
 
@@ -98,6 +102,7 @@ struct ConstantInteger : public Token {
 
 struct ConstantChar : public Token {
     const char *content;
+    const char* attr;
 
     ConstantChar(const char *content);
 
@@ -106,6 +111,7 @@ struct ConstantChar : public Token {
 
 struct Identifier : public Token {
     const char *content;
+    const char* attr;
 
     Identifier(const char *content);
 
@@ -114,6 +120,7 @@ struct Identifier : public Token {
 
 struct ConstantBoolean : public Token {
     const char *content;
+    bool attr;
 
     ConstantBoolean(const char *content);
 
@@ -122,6 +129,7 @@ struct ConstantBoolean : public Token {
 
 struct Marker : public Token {
     const char *content;
+    const char* attr;
 
     Marker(const char *content);
 
