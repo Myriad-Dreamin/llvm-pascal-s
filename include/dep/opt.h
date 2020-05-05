@@ -184,8 +184,8 @@ namespace dep {
             }
 
             if (!internal::split(argv[i] + omit_prefix_len, k, v)) {
-                if (i + 1 < argc && strcmp(argv[i + 1], "-") == 0) {
-                    map[k] = {argv[i++], true};
+                if (i + 1 < argc && strncmp(argv[i + 1], "-", 1) != 0) {
+                    map[k] = {argv[++i], true};
                 } else {
                     map[k] = {"", false};
                 }
