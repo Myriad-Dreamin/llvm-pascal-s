@@ -9,7 +9,7 @@ RuntimeReinterpretTokenException::RuntimeReinterpretTokenException(const Token *
         : token(token), msg(fmt::format("runtime reinterpret token error: unknown type: {}", token->type)) {
 }
 
-const char *RuntimeReinterpretTokenException::what() const _GLIBCXX_USE_NOEXCEPT {
+const char *RuntimeReinterpretTokenException::what() const noexcept {
 //
     return msg.c_str();
 }

@@ -44,7 +44,7 @@
 #define __STDC_LIMIT_MACROS 1
 #endif
 
-#include <inttypes.h>
+#include <cstdint>
 typedef int8_t flex_int8_t;
 typedef uint8_t flex_uint8_t;
 typedef int16_t flex_int16_t;
@@ -93,7 +93,6 @@ typedef unsigned int flex_uint32_t;
 #endif
 
 #endif /* ! C99 */
-
 #endif /* ! FLEXINT_H */
 
 /* begin standard C++ headers. */
@@ -102,7 +101,8 @@ typedef unsigned int flex_uint32_t;
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
-/* end standard C++ headers. */
+/* end standard C++ headers.
+*/
 
 /* TODO: this is always defined, so inline it */
 #define yyconst const

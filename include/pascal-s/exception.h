@@ -13,7 +13,7 @@ class RuntimeReinterpretTokenException : public std::exception {
 public:
     explicit RuntimeReinterpretTokenException(const Token *token);
 
-    [[nodiscard]] const char *what() const _GLIBCXX_USE_NOEXCEPT override;
+    [[nodiscard]] const char *what() const noexcept override;
 };
 
 #endif
