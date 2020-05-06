@@ -21,6 +21,7 @@ TEST_P(GoodTokenTest, WillNotThrowException) /* NOLINT */
 }
 
 INSTANTIATE_TEST_SUITE_P(TestIdentifiers, GoodTokenTest, testing::Values( /* NOLINT */
-        TokenTestCase{"a", "a"},
-        TokenTestCase{"a ", "a"}
+        TokenTestCase{"a {a}", "a"},
+        TokenTestCase{"a ", "a"},
+        TokenTestCase{"a {a \n a}", "a"}
 ));
