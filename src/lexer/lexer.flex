@@ -12,7 +12,7 @@
 
 
 %%
-\{[^}]*\} {}
+\{[^}]*\} {} /* do nothing */
 to|do|of|for|else|if|then|char|boolean|real|integer|array|end|begin|function|procedure|var|const|program { return addKeyword(); }
 
 true|false { return addBoolean(); }
