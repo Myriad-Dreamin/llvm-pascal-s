@@ -25,18 +25,20 @@ public:
     ast::Program *parse_program_struct();
 
     ast::IdentList *parse_id_list_with_paren();
-    ast::IdentList *parse_id_list();
     ast::ParamList *parse_param_list_with_paren();
-    ast::ParamList *parse_param_list();
     ast::VariableList *parse_variable_list_with_paren();
+
+    ast::IdentList *parse_id_list();
+    ast::ParamList *parse_param_list();
     ast::VariableList *parse_variable_list();
 
     ast::ConstDecls *parse_const_decls();
     ast::ConstDecl *parse_const_decl();
     ast::VarDecls *parse_var_decls();
     ast::VarDecl *parse_var_decl();
+    ast::Procedure *parse_function_head();
+    ast::Procedure *parse_function_body(ast::Procedure*);
     ast::FunctionDecls *parse_function_decls();
-    ast::FunctionDecl *parse_function_decl();
 
     ast::TypeSpec *parse_type();
     ast::ArrayTypeSpec *parse_array_type(const Keyword* keyword_array);
@@ -54,6 +56,7 @@ private:
     ast::IdentList *_parse_id_list(ast::IdentList *);
     ast::ConstDecls *_parse_const_decls(ast::ConstDecls *);
     ast::VarDecls *_parse_var_decls(ast::VarDecls *);
+    ast::FunctionDecls *_parse_function_decls(ast::FunctionDecls *decls);
 };
 
 

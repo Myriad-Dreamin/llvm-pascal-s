@@ -2,8 +2,8 @@
 // Created by kamiyoru on 2020/5/8.
 //
 
-#ifndef PASCAL_S_AST_H
-#define PASCAL_S_AST_H
+#ifndef KAL_AST_H
+#define KAL_AST_H
 
 #include <cstdint>
 #include <vector>
@@ -32,7 +32,6 @@ namespace ast {
         ConstDecls,
         VarDecl,
         VarDecls,
-        FunctionDecl,
         FunctionDecls,
         ExpAssign,
         UnExp,
@@ -56,7 +55,9 @@ namespace ast {
     };
 
     struct Function : public Node {
-        Function() : Node(Type::Function) {}
+        const Keyword *fn_def;
+
+        explicit Function(const Keyword *fn_def) : fn_def(fn_def), Node(Type::Function) {}
     };
 
     struct TypeSpec: public Node {
@@ -143,12 +144,22 @@ namespace ast {
         }
     };
 
-    struct FunctionDecl : public Node {
-        FunctionDecl() : Node(Type::FunctionDecl) {}
+    struct Procedure : public Function {
+        Type fn_type;
+        const Identifier *name;
+        ParamList *params;
+
+
+        explicit Procedure(const Keyword *fn_def, const Identifier *name)
+            : Function(fn_def), fn_type(Type::Procedure), name(name), params(nullptr) {}
+
+            ~Procedure() {
+            delete params;
+        }
     };
 
     struct FunctionDecls : public Node {
-        std::vector<FunctionDecl*> decls;
+        std::vector<Procedure*> decls;
         FunctionDecls() : Node(Type::FunctionDecls) {}
 
         ~FunctionDecls() {
@@ -159,23 +170,16 @@ namespace ast {
     };
 
     struct Program : public Function {
-        Node fn_type;
-        const Keyword *program;
+        Type fn_type;
         const Identifier *name;
         ConstDecls *decls;
 
         explicit Program(const Keyword *program, const Identifier *name, ConstDecls *decls)
-                : Function(), fn_type(Type::Program), program(program), name(name), decls(decls) {}
+                : Function(program), fn_type(Type::Program), name(name), decls(decls) {}
 
         ~Program() {
             deleteAST(decls);
         }
-    };
-
-    struct Procedure : public Function {
-        Node fn_type;
-
-        Procedure() : Function(), fn_type(Type::Procedure) {}
     };
 
     struct Ident : public Exp {
@@ -266,4 +270,4 @@ namespace ast {
     };
 }
 
-#endif //PASCAL_S_AST_H
+#endif //KAL_AST_H

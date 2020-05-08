@@ -12,6 +12,11 @@ template struct Parser<MockLexer>;
     return nullptr;\
 }}while(0)
 
+#define expected_enum_type_r(predicator, indicate, rvalue) do {if (!predicator(current_token)) {\
+    ErrorList.push_back(new PascalSParseExpectGotError(__FUNCTION__, &indicate, current_token));\
+    return rvalue;\
+}}while(0)
+
 #define expected_type_r(tok_type, rvalue) do {if (current_token == nullptr || current_token->type != tok_type) {\
     ErrorList.push_back(new PascalSParseExpectTGotError(__FUNCTION__, tok_type, current_token));\
     return rvalue;\
@@ -56,15 +61,6 @@ template<typename Lexer>
 const Token *Parser<Lexer>::next_token() {
     current_token = lexer.next_token();
     return current_token;
-}
-
-template<typename Lexer>
-ast::IdentList *Parser<Lexer>::parse_id_list_with_paren() {
-    expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
-    next_token();
-    parse_id_list();
-    expected_enum_type(predicate::is_rparen, predicate::marker_rparen);
-    next_token();
 }
 
 template<typename Lexer>
@@ -343,35 +339,75 @@ ast::Exp *Parser<Lexer>::parse_binary_exp(ast::Exp *lhs, const Marker *marker, m
 
 template<typename Lexer>
 ast::FunctionDecls *Parser<Lexer>::parse_function_decls() {
+
+    if (predicate::is_function(current_token) || predicate::is_procedure(current_token)) {
+        return _parse_function_decls(new ast::FunctionDecls);
+    }
     return nullptr;
 }
 
 template<typename Lexer>
-ast::FunctionDecl *Parser<Lexer>::parse_function_decl() {
-    return nullptr;
+ast::FunctionDecls*Parser<Lexer>::_parse_function_decls(ast::FunctionDecls*decls) {
+    ast::Procedure *proc = parse_function_head();
+    if (proc == nullptr) {
+        return decls;
+    }
+    if (predicate::is_function(proc->fn_def)) {
+
+        expected_enum_type_r(predicate::is_colon, predicate::marker_colon, decls);
+        next_token();
+        auto basic = reinterpret_cast<const Keyword*>(current_token);
+        if (
+                basic->key_type == KeywordType::Integer ||
+                basic->key_type == KeywordType::Real||
+                basic->key_type == KeywordType::Char||
+                basic->key_type == KeywordType::Boolean
+                ) {
+            next_token();
+            proc->fn_def = basic;
+        } else {
+            ErrorList.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", basic));
+            delete proc;
+            return decls;
+        }
+    }
+    expected_enum_type_r(predicate::is_colon, predicate::marker_colon, decls);
+    next_token();
+
+    proc = parse_function_body(proc);
+    if (proc != nullptr) {
+        decls->decls.push_back(proc);
+    }
+
+    if (predicate::is_function(current_token) || predicate::is_procedure(current_token)) {
+        return _parse_function_decls(decls);
+    }
+    return decls;
 }
 
 template<typename Lexer>
-ast::ParamList *Parser<Lexer>::parse_param_list_with_paren() {
-    return nullptr;
+ast::Procedure *Parser<Lexer>::parse_function_head() {
+    auto fn_def = reinterpret_cast<const Keyword*>(current_token);
+
+    auto ident = reinterpret_cast<const Identifier*>(next_token());
+    expected_type(TokenType::Identifier);
+    next_token();
+
+    auto proc = new ast::Procedure(fn_def, ident);
+    if (predicate::is_lparen(current_token)) {
+        proc->params = parse_param_list_with_paren();
+        if (proc->params == nullptr) {
+            delete proc;
+            return nullptr;
+        }
+    }
+    return proc;
 }
 
 template<typename Lexer>
 ast::ParamList *Parser<Lexer>::parse_param_list() {
     return nullptr;
 }
-
-template<typename Lexer>
-ast::Statement *Parser<Lexer>::parse_statement() {
-    return nullptr;
-}
-
-template<typename Lexer>
-ast::VariableList *Parser<Lexer>::parse_variable_list_with_paren() {
-    return nullptr;
-}
-
-
 
 template<typename Lexer>
 ast::VariableList *Parser<Lexer>::parse_variable_list() {
@@ -389,6 +425,70 @@ ast::VariableList *Parser<Lexer>::parse_variable_list() {
 //    }
     return nullptr;
 }
+
+template<typename Lexer>
+ast::Statement *Parser<Lexer>::parse_statement() {
+    return nullptr;
+}
+
+
+template<typename Lexer>
+ast::Procedure *Parser<Lexer>::parse_function_body(ast::Procedure *) {
+    return nullptr;
+}
+
+template<typename Lexer>
+ast::IdentList *Parser<Lexer>::parse_id_list_with_paren() {
+    expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
+    next_token();
+    auto ident_list = parse_id_list();
+    if (ident_list == nullptr) {
+        return nullptr;
+    }
+    if (!predicate::is_rparen(current_token)) {
+        delete ident_list;
+        ErrorList.push_back(new PascalSParseExpectGotError(__FUNCTION__, &predicate::marker_rparen, current_token));
+        return nullptr;
+    }
+    next_token();
+    return ident_list;
+}
+
+template<typename Lexer>
+ast::ParamList *Parser<Lexer>::parse_param_list_with_paren() {
+    expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
+    next_token();
+    auto ident_list = parse_param_list();
+    if (ident_list == nullptr) {
+        return nullptr;
+    }
+    if (!predicate::is_rparen(current_token)) {
+        delete ident_list;
+        ErrorList.push_back(new PascalSParseExpectGotError(__FUNCTION__, &predicate::marker_rparen, current_token));
+        return nullptr;
+    }
+    next_token();
+    return ident_list;
+}
+
+
+template<typename Lexer>
+ast::VariableList *Parser<Lexer>::parse_variable_list_with_paren() {
+    expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
+    next_token();
+    auto ident_list = parse_variable_list();
+    if (ident_list == nullptr) {
+        return nullptr;
+    }
+    if (!predicate::is_rparen(current_token)) {
+        delete ident_list;
+        ErrorList.push_back(new PascalSParseExpectGotError(__FUNCTION__, &predicate::marker_rparen, current_token));
+        return nullptr;
+    }
+    next_token();
+    return ident_list;
+}
+
 
 
 #undef expected_keyword

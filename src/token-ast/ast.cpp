@@ -58,9 +58,6 @@ void ast::deleteAST(Node *node) {
         case Type::VarDecls:
             delete reinterpret_cast<ast::VarDecls*>(node);
             break;
-        case Type::FunctionDecl:
-            delete reinterpret_cast<ast::FunctionDecl*>(node);
-            break;
         case Type::FunctionDecls:
             delete reinterpret_cast<ast::FunctionDecls*>(node);
             break;
