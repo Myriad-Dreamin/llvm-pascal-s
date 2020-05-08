@@ -189,15 +189,34 @@ namespace ast {
     };
 
     struct UnExp : public Exp {
-        UnExp() : Exp(Type::UnExp) {}
+        Exp *lhs;
+        const Marker *marker;
+
+        explicit UnExp(const Marker *marker, Exp *lhs) : Exp(Type::UnExp), lhs(lhs), marker(marker) {}
+        ~UnExp() {
+            deleteAST(lhs);
+        };
     };
 
     struct BiExp : public Exp {
-        BiExp() : Exp(Type::BiExp) {}
+        Exp *lhs, *rhs;
+        const Marker *marker;
+
+        explicit BiExp(Exp *lhs, const Marker *marker, Exp *rhs) : Exp(Type::BiExp), lhs(lhs), rhs(rhs), marker(marker) {}
+        ~BiExp() {
+            deleteAST(lhs);
+            deleteAST(rhs);
+        };
     };
 
     struct ExpCall : public Exp {
-        ExpCall() : Exp(Type::ExpCall) {}
+        const Identifier *fn;
+        VariableList *params;
+
+        explicit ExpCall(const Identifier *fn, VariableList *params) : Exp(Type::ExpCall), fn(fn), params(params) {}
+        ~ExpCall() {
+            deleteAST(params);
+        };
     };
 
     struct Statement : public Exp {

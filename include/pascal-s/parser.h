@@ -5,6 +5,7 @@
 #ifndef PASCAL_S_PARSER_H
 #define PASCAL_S_PARSER_H
 
+#include <vector>
 #include "interface.h"
 #include "ast.h"
 #include "exception.h"
@@ -41,7 +42,10 @@ public:
     ast::ArrayTypeSpec *parse_array_type(const Keyword* keyword_array);
 
     ast::Exp *parse_const_exp();
-    ast::Exp *parse_exp();
+    ast::Exp *parse_exp(const std::vector<Token *> *till = nullptr);
+    ast::Exp *parse_binary_exp(ast::Exp *lhs, const Marker *marker, marker_type_underlying_type current_marker_pri,
+            const std::vector<Token *> *till = nullptr);
+    ast::Exp *parse_fac();
     ast::Statement *parse_statement();
 
     const Token* next_token();

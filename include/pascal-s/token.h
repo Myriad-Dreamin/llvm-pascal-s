@@ -4,9 +4,11 @@
 #define PASCAL_S_TOKEN
 #define KEYWORD_NUM 19
 
-#include <stdint.h>
+#include <cstdint>
 #include <map>
 #include "exception.h"
+#include <stdexcept>
+#include <vector>
 
 struct LexerInfo {
     int64_t row, column;
@@ -69,31 +71,33 @@ enum class KeywordType {
 };
 
 
-enum class MarkerType {
-    NEQ, // <>
-    LE, // <=
-    GE, // >=
-    LT, // <
-    EQ, // =
-    GT, // >
-    Range, // ..
+using marker_type_underlying_type = uint8_t ;
+enum class MarkerType :marker_type_underlying_type {
+    Range = 0x00, // ..
+    NEQ = 0x01, // <>
+    LE = 0x02, // <=
+    GE = 0x03, // >=
+    LT = 0x04, // <
+    EQ = 0x05, // =
+    GT = 0x06, // >
+    Add = 0x10, // +
+    Sub = 0x11, // -
+    Mul = 0x20, // *
+    Div = 0x21, // /
 
-    Assign, // :=
-    Add, // +
-    Sub, // -
-    Mul, // *
-    Div, // /
+    LParen = 0x30, // (
+    RParen = 0x31, // )
+    LBracket = 0x40, // [
+    RBracket = 0x41, // ]
 
-    LParen, // (
-    RParen, // )
-    LBracket, // [
-    RBracket, // ]
-
-    Comma, // ,
-    Dot, // .
-    Semicolon, // ;
-    Colon, // :
+    Assign = 0x50, // :=
+    Comma = 0x51, // ,
+    Dot = 0x52, // .
+    Semicolon = 0x53, // ;
+    Colon = 0x54, // :
 };
+
+marker_type_underlying_type  get_marker_pri(MarkerType marker_type);
 
 
 struct Keyword : public Token {
@@ -233,6 +237,11 @@ extern const cls cls_lower ##_## lower;
     pascal_s_predicator(Keyword, keyword, of, Of)
 
 #undef pascal_s_predicator
+
+
+    bool token_equal(const Token *lhs, const Token *rhs);
+    bool token_equal(const Token *lhs, const std::vector<Token*> *rhs);
+
 }
 #endif
 

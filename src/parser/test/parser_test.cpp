@@ -90,7 +90,6 @@ INSTANTIATE_TEST_SUITE_P(Simple, ParserMainTest, testing::Values( /* NOLINT */
 ));
 
 
-
 struct ParserConstDeclsTest : public ParserTest {
 };
 
@@ -105,9 +104,6 @@ TEST_P(ParserConstDeclsTest, WillNotThrowException) /* NOLINT */
     ASSERT_NE(ast, nullptr);
 
     deleteAST(ast);
-//        auto tok = lexer.next_token();
-//        ASSERT_NE(tok, nullptr);
-//        ASSERT_TOKEN_EQUAL(tok, param.expected);
 }
 
 INSTANTIATE_TEST_SUITE_P(Simple, ParserConstDeclsTest, testing::Values( /* NOLINT */
@@ -135,3 +131,98 @@ INSTANTIATE_TEST_SUITE_P(Simple, ParserConstDeclsTest, testing::Values( /* NOLIN
         }
 ));
 
+
+struct ParserVarDeclsTest : public ParserTest {
+};
+
+TEST_P(ParserVarDeclsTest, WillNotThrowException) /* NOLINT */
+{
+    auto &&param = GetParam();
+    MockLexer lexer(param.token_stream);
+    LexerProxy<MockLexer> lexer_proxy(lexer);
+    Parser parser(lexer_proxy);
+    parser.next_token();
+    auto ast = parser.parse_var_decls();
+    ASSERT_NE(ast, nullptr);
+
+    deleteAST(ast);
+}
+
+INSTANTIATE_TEST_SUITE_P(Simple, ParserVarDeclsTest, testing::Values( /* NOLINT */
+        ParserTestCase{
+                {
+                        new Keyword(KeywordType::Var),
+                        new Identifier("a"),
+                        new Marker(MarkerType::Colon),
+                        new Keyword(KeywordType::Boolean),
+                }
+        },
+        ParserTestCase{
+                {
+                        new Keyword(KeywordType::Var),
+                        new Identifier("a"),
+                        new Marker(MarkerType::Comma),
+                        new Identifier("b"),
+                        new Marker(MarkerType::Colon),
+                        new Keyword(KeywordType::Boolean),
+                }
+        },
+        ParserTestCase{
+                {
+                        new Keyword(KeywordType::Var),
+                        new Identifier("a"),
+                        new Marker(MarkerType::Colon),
+                        new Keyword(KeywordType::Array),
+                        new Marker(MarkerType::LBracket),
+                        new Marker(MarkerType::RBracket),
+                        new Keyword(KeywordType::Of),
+                        new Keyword(KeywordType::Boolean),
+                }
+        }
+));
+
+
+struct ParserExpTest : public ParserTest {
+};
+
+TEST_P(ParserExpTest, WillNotThrowException) /* NOLINT */
+{
+    auto &&param = GetParam();
+    MockLexer lexer(param.token_stream);
+    LexerProxy<MockLexer> lexer_proxy(lexer);
+    Parser parser(lexer_proxy);
+    parser.next_token();
+    auto ast = parser.parse_exp();
+    ASSERT_NE(ast, nullptr);
+
+    deleteAST(ast);
+//        auto tok = lexer.next_token();
+//        ASSERT_NE(tok, nullptr);
+//        ASSERT_TOKEN_EQUAL(tok, param.expected);
+}
+
+INSTANTIATE_TEST_SUITE_P(Simple, ParserExpTest, testing::Values( /* NOLINT */
+        ParserTestCase{
+                {
+                        new ConstantInteger("1"),
+                }
+        },
+        ParserTestCase{
+                {
+                        new ConstantInteger("1"),
+                        new Marker(MarkerType::Add),
+                        new ConstantInteger("1"),
+                }
+        },
+        ParserTestCase{
+                {
+                        new ConstantInteger("1"),
+                        new Marker(MarkerType::Add),
+                        new Marker(MarkerType::LParen),
+                        new ConstantInteger("1"),
+                        new Marker(MarkerType::Add),
+                        new ConstantInteger("1"),
+                        new Marker(MarkerType::RParen),
+                }
+        }
+));

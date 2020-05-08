@@ -209,6 +209,10 @@ const char *get_marker_type_reversed(MarkerType kt) {
     return reverse_marker_map.at(kt);
 }
 
+marker_type_underlying_type get_marker_pri(MarkerType marker_type) {
+    return static_cast<marker_type_underlying_type>(marker_type) >> 0x4U;
+}
+
 
 namespace predicate {
 #define marker_predicator(lower, upper) bool is_ ## lower(const Token *tok) {\
@@ -265,6 +269,39 @@ const Keyword keyword_## lower(KeywordType::upper);
     keyword_predicator(to, To)
     keyword_predicator(do, Do)
     keyword_predicator(of, Of)
+
+    bool token_equal(const Token *lhs, const std::vector<Token *> *rhs) {
+        if (rhs == nullptr) {
+            return lhs == nullptr;
+        }
+
+        for (auto r: *rhs) {
+            if (token_equal(lhs, r)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool token_equal(const Token *lhs, const Token *rhs) {
+        if (lhs == nullptr && rhs == nullptr) {
+            return true;
+        }
+        if (lhs == nullptr || rhs == nullptr) {
+            return false;
+        }
+        if (lhs->type != rhs->type) {
+            return false;
+        }
+        switch (lhs->type) {
+            case TokenType::Marker:
+                return reinterpret_cast<const Marker *>(lhs)->marker_type ==
+                       reinterpret_cast<const Marker *>(rhs)->marker_type;
+            default:
+                throw std::runtime_error("todo token equal");
+        }
+    }
+
 #undef marker_predicator
 #undef keyword_predicator
 }
