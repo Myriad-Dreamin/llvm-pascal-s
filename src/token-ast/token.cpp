@@ -40,7 +40,7 @@ std::string convertToString(const Token *pToken) {
                                get_keyword_type_reversed(reinterpret_cast<const Keyword *>(pToken)->key_type));
         case TokenType::Marker:
             return fmt::format("{{ .type = Marker .marker_type = {} }}",
-                               reinterpret_cast<const Marker *>(pToken)->content);
+                               get_marker_type_reversed(reinterpret_cast<const Marker *>(pToken)->marker_type));
         case TokenType::ConstantString:
             return fmt::format("{{ .type = ConstantString .content = {} }}",
                                reinterpret_cast<const ConstantString *>(pToken)->content);
@@ -128,16 +128,16 @@ ConstantBoolean::~ConstantBoolean() {
     delete[]content;
 }
 
-Marker::Marker(const char *cmarker) : Token() {
-    this->type = TokenType::Marker;
-    int l = strlen(cmarker);
-    content = new char[l + 1];
-    strcpy(const_cast<char *>(content), cmarker);
+Keyword::Keyword(KeywordType key_type) noexcept: Token(), key_type(key_type) {
+    this->type = TokenType::Keyword;
 }
 
-Marker::~Marker() {
-    delete[]content;
+
+Marker::Marker(MarkerType marker_type) noexcept: Token(), marker_type(marker_type) {
+    this->type = TokenType::Marker;
 }
+
+Marker::~Marker() = default;
 
 keyword_mapping key_map = {
         keyword_mapping::value_type{"to", KeywordType::To},
@@ -170,4 +170,101 @@ const char *get_keyword_type_reversed(KeywordType kt) {
         }
     }
     return reverse_key_map.at(kt);
+}
+
+marker_mapping marker_map = {
+        marker_mapping::value_type{"<>", MarkerType::NEQ},
+        marker_mapping::value_type{"<=", MarkerType::LE},
+        marker_mapping::value_type{">=", MarkerType::GE},
+        marker_mapping::value_type{"<", MarkerType::LT},
+        marker_mapping::value_type{"=", MarkerType::EQ},
+        marker_mapping::value_type{">", MarkerType::GT},
+        marker_mapping::value_type{"..", MarkerType::Range},
+
+        marker_mapping::value_type{":=", MarkerType::Assign},
+        marker_mapping::value_type{"+", MarkerType::Add},
+        marker_mapping::value_type{"-", MarkerType::Sub},
+        marker_mapping::value_type{"*", MarkerType::Mul},
+        marker_mapping::value_type{"/", MarkerType::Div},
+
+        marker_mapping::value_type{"(", MarkerType::LParen},
+        marker_mapping::value_type{")", MarkerType::RParen},
+        marker_mapping::value_type{"[", MarkerType::LBracket},
+        marker_mapping::value_type{"]", MarkerType::RBracket},
+
+        marker_mapping::value_type{",", MarkerType::Comma},
+        marker_mapping::value_type{".", MarkerType::Dot},
+        marker_mapping::value_type{";", MarkerType::Semicolon},
+        marker_mapping::value_type{":", MarkerType::Colon},
+};
+
+reverse_marker_mapping reverse_marker_map;
+
+const char *get_marker_type_reversed(MarkerType kt) {
+    if (reverse_marker_map.empty()) {
+        for (auto &kv: marker_map) {
+            reverse_marker_map[kv.second] = kv.first.c_str();
+        }
+    }
+    return reverse_marker_map.at(kt);
+}
+
+
+namespace predicate {
+#define marker_predicator(lower, upper) bool is_ ## lower(const Token *tok) {\
+    return tok != nullptr && tok->type == TokenType::Marker && reinterpret_cast<const Marker*>(tok)-> marker_type == MarkerType::upper; \
+}\
+const Marker marker_## lower(MarkerType::upper);
+#define keyword_predicator(lower, upper) bool is_ ## lower(const Token *tok) {\
+    return tok != nullptr && tok->type == TokenType::Keyword && reinterpret_cast<const Keyword*>(tok)-> key_type == KeywordType::upper; \
+}\
+const Keyword keyword_## lower(KeywordType::upper);
+
+    marker_predicator(neq, NEQ)
+    marker_predicator(le, LE)
+    marker_predicator(ge, GE)
+    marker_predicator(lt, LT)
+    marker_predicator(eq, EQ)
+    marker_predicator(gt, GT)
+    marker_predicator(range, Range)
+
+    marker_predicator(assgin, Assign)
+    marker_predicator(add, Add)
+    marker_predicator(sub, Sub)
+    marker_predicator(mul, Mul)
+    marker_predicator(div, Div)
+
+    marker_predicator(lparen, LParen)
+    marker_predicator(rparen, RParen)
+    marker_predicator(lbracket, LBracket)
+    marker_predicator(rbracket, RBracket)
+
+    marker_predicator(comma, Comma)
+    marker_predicator(dot, Dot)
+    marker_predicator(semicolon, Semicolon)
+    marker_predicator(colon, Colon)
+
+    keyword_predicator(program, Program)
+    keyword_predicator(const, Const)
+    keyword_predicator(var, Var)
+    keyword_predicator(procedure, Procedure)
+    keyword_predicator(function, Function)
+    keyword_predicator(begin, Begin)
+    keyword_predicator(end, End)
+
+    keyword_predicator(array, Array)
+    keyword_predicator(integer, Integer)
+    keyword_predicator(real, Real)
+    keyword_predicator(boolean, Boolean)
+    keyword_predicator(char, Char)
+
+    keyword_predicator(if, If)
+    keyword_predicator(then, Then)
+    keyword_predicator(else, Else)
+    keyword_predicator(for, For)
+    keyword_predicator(to, To)
+    keyword_predicator(do, Do)
+    keyword_predicator(of, Of)
+#undef marker_predicator
+#undef keyword_predicator
 }

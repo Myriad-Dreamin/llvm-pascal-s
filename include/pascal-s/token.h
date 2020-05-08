@@ -21,6 +21,7 @@ enum class TokenType {
     ConstantBoolean,
     Identifier,
     Marker,
+    Nullptr,
     Length
 };
 
@@ -35,7 +36,7 @@ struct Token {
 };
 
 enum class KeywordType {
-    Program ,
+    Program,
     Const,
     Var,
     Procedure,
@@ -68,22 +69,55 @@ enum class KeywordType {
 };
 
 
+enum class MarkerType {
+    NEQ, // <>
+    LE, // <=
+    GE, // >=
+    LT, // <
+    EQ, // =
+    GT, // >
+    Range, // ..
+
+    Assign, // :=
+    Add, // +
+    Sub, // -
+    Mul, // *
+    Div, // /
+
+    LParen, // (
+    RParen, // )
+    LBracket, // [
+    RBracket, // ]
+
+    Comma, // ,
+    Dot, // .
+    Semicolon, // ;
+    Colon, // :
+};
+
+
 struct Keyword : public Token {
     KeywordType key_type;
-    const char* attr;
 
-    explicit Keyword(KeywordType key_type) : Token(), key_type(key_type) {
-        this->type = TokenType::Keyword;
-    }
+    explicit Keyword(KeywordType key_type) noexcept;
 };
 
-struct ConstantString: public Token {
-    const char* content;
-    const char* attr;
+struct Marker : public Token {
+    MarkerType marker_type;
+
+    explicit Marker(MarkerType marker_type) noexcept;
+
+    ~Marker();
 };
 
-struct ConstantReal: public Token {
-    const char* content;
+
+struct ConstantString : public Token {
+    const char *content;
+    const char *attr;
+};
+
+struct ConstantReal : public Token {
+    const char *content;
     double attr;
 
     ConstantReal(const char *content);
@@ -102,7 +136,7 @@ struct ConstantInteger : public Token {
 
 struct ConstantChar : public Token {
     const char *content;
-    const char* attr;
+    const char *attr;
 
     ConstantChar(const char *content);
 
@@ -111,7 +145,7 @@ struct ConstantChar : public Token {
 
 struct Identifier : public Token {
     const char *content;
-    const char* attr;
+    const char *attr;
 
     Identifier(const char *content);
 
@@ -127,15 +161,6 @@ struct ConstantBoolean : public Token {
     ~ConstantBoolean();
 };
 
-struct Marker : public Token {
-    const char *content;
-    const char *attr;
-
-    Marker(const char *content);
-
-    ~Marker();
-};
-
 void deleteToken(Token *pToken);
 
 std::string convertToString(const Token *pToken);
@@ -147,7 +172,67 @@ using reverse_keyword_mapping = std::map<KeywordType, const char *>;
 extern keyword_mapping key_map;
 extern reverse_keyword_mapping reverse_key_map;
 
+using marker_mapping = std::map<std::string, MarkerType>;
+using reverse_marker_mapping = std::map<MarkerType, const char *>;
+extern marker_mapping marker_map;
+extern reverse_marker_mapping reverse_marker_map;
+
 const char *get_keyword_type_reversed(KeywordType kt);
 
+const char *get_marker_type_reversed(MarkerType kt);
+
+
+namespace predicate {
+#define pascal_s_predicator(cls, cls_lower, lower, upper) bool is_ ## lower(const Token *tok);\
+extern const cls cls_lower ##_## lower;
+
+    pascal_s_predicator(Marker, marker, neq, NEQ)
+    pascal_s_predicator(Marker, marker, le, LE)
+    pascal_s_predicator(Marker, marker, ge, GE)
+    pascal_s_predicator(Marker, marker, lt, LT)
+    pascal_s_predicator(Marker, marker, eq, EQ)
+    pascal_s_predicator(Marker, marker, gt, GT)
+    pascal_s_predicator(Marker, marker, range, Range)
+
+    pascal_s_predicator(Marker, marker, assgin, Assign)
+    pascal_s_predicator(Marker, marker, add, Add)
+    pascal_s_predicator(Marker, marker, sub, Sub)
+    pascal_s_predicator(Marker, marker, mul, Mul)
+    pascal_s_predicator(Marker, marker, div, Div)
+
+    pascal_s_predicator(Marker, marker, lparen, LParen)
+    pascal_s_predicator(Marker, marker, rparen, RParen)
+    pascal_s_predicator(Marker, marker, lbracket, LBracket)
+    pascal_s_predicator(Marker, marker, rbracket, RBracket)
+
+    pascal_s_predicator(Marker, marker, comma, Comma)
+    pascal_s_predicator(Marker, marker, dot, Dot)
+    pascal_s_predicator(Marker, marker, semicolon, Semicolon)
+    pascal_s_predicator(Marker, marker, colon, Colon)
+
+    pascal_s_predicator(Keyword, keyword, program, Program)
+    pascal_s_predicator(Keyword, keyword, const, Const)
+    pascal_s_predicator(Keyword, keyword, var, Var)
+    pascal_s_predicator(Keyword, keyword, procedure, Procedure)
+    pascal_s_predicator(Keyword, keyword, function, Function)
+    pascal_s_predicator(Keyword, keyword, begin, Begin)
+    pascal_s_predicator(Keyword, keyword, end, End)
+
+    pascal_s_predicator(Keyword, keyword, array, Array)
+    pascal_s_predicator(Keyword, keyword, integer, Integer)
+    pascal_s_predicator(Keyword, keyword, real, Real)
+    pascal_s_predicator(Keyword, keyword, boolean, Boolean)
+    pascal_s_predicator(Keyword, keyword, char, Char)
+
+    pascal_s_predicator(Keyword, keyword, if, If)
+    pascal_s_predicator(Keyword, keyword, then, Then)
+    pascal_s_predicator(Keyword, keyword, else, Else)
+    pascal_s_predicator(Keyword, keyword, for, For)
+    pascal_s_predicator(Keyword, keyword, to, To)
+    pascal_s_predicator(Keyword, keyword, do, Do)
+    pascal_s_predicator(Keyword, keyword, of, Of)
+
+#undef pascal_s_predicator
+}
 #endif
 
