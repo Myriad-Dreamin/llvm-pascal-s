@@ -50,7 +50,7 @@ int Lexer::addKeyword() {
 
 int Lexer::addMarker() {
     std::cout << (fmt::format("found Marker {} {} \t in line {} \n", yytext, current_offset - line_offset, yylineno));
-    auto tok = new Marker(yytext);
+    auto tok = new Marker(marker_map.at(yytext));
     return addToken(tok);
 }
 

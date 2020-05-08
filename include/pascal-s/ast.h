@@ -186,18 +186,20 @@ namespace ast {
     struct Program : public Function {
         Type fn_type;
         const Identifier *name;
+        IdentList *idents;
         ConstDecls *const_decls;
         VarDecls *var_decls;
         FunctionDecls *fn_decls;
         Statement *body;
 
-        explicit Program(const Keyword *program, const Identifier *name,
-                ConstDecls *decls, VarDecls *var_decls, FunctionDecls *fn_decls,
+        explicit Program(const Keyword *program, const Identifier *name, IdentList *idents,
+                         ConstDecls *decls, VarDecls *var_decls, FunctionDecls *fn_decls,
                          Statement *body)
-                : Function(program), fn_type(Type::Program), name(name),
+                : Function(program), fn_type(Type::Program), name(name), idents(idents),
                   const_decls(decls), var_decls(var_decls), fn_decls(fn_decls), body(body) {}
 
         ~Program() {
+            deleteAST(idents);
             deleteAST(const_decls);
             deleteAST(var_decls);
             deleteAST(fn_decls);
@@ -212,7 +214,14 @@ namespace ast {
     };
 
     struct ExpAssign : public Exp {
-        ExpAssign() : Exp(Type::ExpAssign) {}
+        ast::Exp *lhs, *rhs;
+
+        ExpAssign(ast::Exp *lhs, ast::Exp *rhs) : Exp(Type::ExpAssign), lhs(lhs), rhs(rhs) {}
+
+        ~ExpAssign() {
+            deleteAST(lhs);
+            deleteAST(rhs);
+        }
     };
 
     struct UnExp : public Exp {

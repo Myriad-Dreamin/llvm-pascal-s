@@ -4,8 +4,12 @@
 
 #include <pascal-s/mock.h>
 #include <pascal-s/parser.h>
+#include <pascal-s/lexer.h>
 
-template struct Parser<MockLexer>;
+template
+struct Parser<MockLexer>;
+template
+struct Parser<FullInMemoryLexer>;
 
 #define expected_enum_type(predicator, indicate) do {if (!predicator(current_token)) {\
     errors.push_back(new PascalSParseExpectGotError(__FUNCTION__, &indicate, current_token));\
@@ -40,8 +44,9 @@ ast::Program *Parser<Lexer>::parse_program_struct() {
     auto ident = next_token();
     expected_type(TokenType::Identifier);
     next_token();
+    ast::IdentList *ident_list = nullptr;
     if (!predicate::is_semicolon(current_token)) {
-        parse_id_list_with_paren();
+        ident_list = parse_id_list_with_paren();
     }
     expected_enum_type(predicate::is_semicolon, predicate::marker_semicolon);
     next_token();
@@ -62,8 +67,8 @@ ast::Program *Parser<Lexer>::parse_program_struct() {
     }
 
     return new ast::Program(
-            reinterpret_cast<const Keyword*>(program),
-            reinterpret_cast<const Identifier*>(ident),
+            reinterpret_cast<const Keyword *>(program),
+            reinterpret_cast<const Identifier *>(ident), ident_list,
             const_decls, var_decls, fn_decls, parse_statement());
 }
 
@@ -267,8 +272,12 @@ ast::Exp *Parser<Lexer>::parse_exp(const std::vector<Token *> *till) {
 //            case MarkerType::Mod:
                 next_token();
                 return parse_binary_exp(maybe_lhs, marker, get_marker_pri(marker->marker_type), till);
-            case MarkerType::Dot: case MarkerType::RParen:
+            case MarkerType::Dot:
+            case MarkerType::RParen:
                 return maybe_lhs;
+            case MarkerType::Assign:
+                next_token();
+                return new ast::ExpAssign(maybe_lhs, parse_exp(till));
             default:
                 assert(false);
                 return nullptr;
