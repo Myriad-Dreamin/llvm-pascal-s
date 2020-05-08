@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <sstream>
 
-namespace dep {
+namespace minimum {
 
 #if defined(later_than_cxx14) && (later_than_cxx14 == true)
     using StringRef = std::string_view;
@@ -41,13 +41,6 @@ namespace dep {
         assert(l <= r);
         return ref.substr(l, r - l);
     }
-
-#ifndef _no_discard
-#define _no_discard [[nodiscard]]
-#endif
-#ifndef _maybe_unused
-#define _maybe_unused [[maybe_unused]]
-#endif
 #else
     using StringRef = const char *;
     int get_length_of_string_ref(StringRef ref) {
@@ -58,18 +51,9 @@ namespace dep {
         assert(l <= r);
         return std::string(ref+l, r-l);
     }
-
-#ifndef _no_discard
-#define _no_discard;
-#endif
-#ifndef _maybe_unused
-#define _maybe_unused
-#endif
 #endif
     using opt_has_value = bool;
     using OptMap = std::map<std::string, std::pair<std::string, opt_has_value>>;
-
-#ifndef USE_MY_BUILD_OPT_MAP
 
     namespace internal {
         bool split(StringRef ref, std::string &k, std::pair<std::string, opt_has_value> &v) {
@@ -115,19 +99,25 @@ namespace dep {
             return std::get<4>(row);
         }
 
+#ifndef MAX_STRING_HEAP_SIZE
 #define MAX_STRING_HEAP_SIZE 1024 * 16
+#endif
         static std::string string_heap[MAX_STRING_HEAP_SIZE];
         static int heap_back = 0;
 
         static std::mutex string_heap_mutex;
 
         template<typename Str>
-        std::string &alloc_string(Str &&str) {
+        StringRef alloc_string(Str &&str) {
             string_heap_mutex.lock();
             string_heap[heap_back] = std::forward<Str>(str);
             std::string &heap_string = string_heap[heap_back++];
             string_heap_mutex.unlock();
+#if later_than_cxx14
             return heap_string;
+#else
+            return heap_string.c_str();
+#endif
         }
 
         template<int no_sep>
@@ -168,6 +158,8 @@ namespace dep {
             return ss.str();
         }
     }
+
+#ifndef USE_MY_BUILD_OPT_MAP
 
     void buildMap(OptMap &map, int &argc, const char **argv) {
         std::string k;
@@ -364,12 +356,12 @@ namespace dep {
             return *this;
         }
 
-        _maybe_unused OptParser &addOpts(const ParseCallback &callback) {
+        [[maybe_unused]] OptParser &addOpts(const ParseCallback &callback) {
             callbacks.push_back(callback);
             return *this;
         }
 
-        void parseOpts(int &argc, const char *argv[]) {
+        virtual void parseOpts(int &argc, const char *argv[]) {
             if (!set_parsed()) {
                 return;
             }
@@ -386,7 +378,7 @@ namespace dep {
             _parseOpts(opts);
         }
 
-        _no_discard bool parsed() const {
+        [[nodiscard]] bool parsed() const {
             return _parsed;
         }
 
@@ -421,7 +413,7 @@ namespace dep {
             return ss.str();
         }
 
-    private:
+    protected:
         bool set_parsed() {
             if (!_parsed) {
                 mutex.lock();
@@ -450,37 +442,37 @@ namespace dep {
 
     static OptParser _global;
 
-    _maybe_unused void addOpts(StringRef long_opt, std::string *storage,
-                               StringRef desc = "", StringRef category = "", const char *default_value = "",
-                               StringRef short_opt = "") {
+    [[maybe_unused]] void addOpts(StringRef long_opt, std::string *storage,
+                                  StringRef desc = "", StringRef category = "", const char *default_value = "",
+                                  StringRef short_opt = "") {
         _global.addOpts(long_opt, storage, desc, category, default_value, short_opt);
     }
 
-    _maybe_unused void addOpts(StringRef long_opt, int64_t *storage,
-                               StringRef desc = "", StringRef category = "", int64_t default_value = 0,
-                               StringRef short_opt = "") {
+    [[maybe_unused]] void addOpts(StringRef long_opt, int64_t *storage,
+                                  StringRef desc = "", StringRef category = "", int64_t default_value = 0,
+                                  StringRef short_opt = "") {
         _global.addOpts(long_opt, storage, desc, category, default_value, short_opt);
     }
 
-    _maybe_unused void addOpts(StringRef long_opt, bool *storage,
-                               StringRef desc = "", StringRef category = "", bool default_value = false,
-                               StringRef short_opt = "") {
+    [[maybe_unused]] void addOpts(StringRef long_opt, bool *storage,
+                                  StringRef desc = "", StringRef category = "", bool default_value = false,
+                                  StringRef short_opt = "") {
         _global.addOpts(long_opt, storage, desc, category, default_value, short_opt);
     }
 
-    _maybe_unused OptParser &addOpts(typename OptParser::ParseCallback &&callback) {
+    [[maybe_unused]] OptParser &addOpts(typename OptParser::ParseCallback &&callback) {
         return _global.addOpts(callback);
     }
 
-    _maybe_unused _maybe_unused OptParser &addOpts(const typename OptParser::ParseCallback &callback) {
+    [[maybe_unused]]  [[maybe_unused]] OptParser &addOpts(const typename OptParser::ParseCallback &callback) {
         return _global.addOpts(callback);
     }
 
-    _maybe_unused void parseOpts(int &argc, const char *argv[]) {
+    [[maybe_unused]] void parseOpts(int &argc, const char *argv[]) {
         _global.parseOpts(argc, argv);
     }
 
-    _maybe_unused std::string print_helps() {
+    [[maybe_unused]] std::string print_helps() {
         return _global.print_helps();
     }
 
@@ -488,6 +480,10 @@ namespace dep {
     bool parsed() {
         return _global.parsed();
     }
+}
+
+namespace dep {
+    using namespace minimum;
 }
 
 

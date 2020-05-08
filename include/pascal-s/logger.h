@@ -2,11 +2,14 @@
 #ifndef MY_LOGGER_IMPL
 #define MY_LOGGER_IMPL
 
+#include <dep/stl.h>
 #include <fmt/core.h>
 
 struct Logger {
+
     std::ostream &os = std::cout;
-#define level_log(func_name, x)     void func_name(const char*file, const char*func, const int line, const std::string_view &s) {\
+#define level_log(func_name, x)     void func_name(const char*file, const char*func, const int line,\
+    string_view s) {\
         os << fmt::format("{0}:{1}:{2} {3} msg:", file, func, line,  #func_name) << s;\
         if (x) exit(1);\
     }

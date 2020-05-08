@@ -4,7 +4,11 @@ project(pascal-s)
 
 message(${CMAKE_SYSTEM_NAME} " " ${CMAKE_SYSTEM_PROCESSOR} " " ${CMAKE_SYSTEM_VERSION})
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
+
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    add_definitions(-DYY_NO_UNISTD_H)
+endif ()
 
 # GTest Begin
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
