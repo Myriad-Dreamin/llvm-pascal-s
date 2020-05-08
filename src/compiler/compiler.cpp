@@ -15,7 +15,7 @@
 
 #define VERSION "v0.1.0"
 
-std::string_view basename(std::string_view s) {
+string_view_return basename(string_view s) {
     for (size_t i = s.length() - 1; i >= 0; i--) {
         if (s[i] == '\\' || s[i] == '/') {
             return s.substr(i + 1);
@@ -129,7 +129,7 @@ private:
     void work_out_tokens(int, const char *[]) {
         if (exited) return;
         if (!options.out_with_token.empty()) {
-            OStreamProxy os(std::cout);
+            OStreamProxy<std::ostream> os(std::cout);
             feature::output_tokens(lexer.get_all_tokens(), os);
             lexer.reset_cursor();
         }
@@ -148,9 +148,9 @@ int main(int argc, const char *argv[]) {
     CompilerOptions options(dep::_global);
     dep::parseOpts(argc, argv);
     FullInMemoryLexer lexer(&options.get_source(), &std::cout);
-    LexerProxy lexer_proxy(lexer);
+    LexerProxy<FullInMemoryLexer> lexer_proxy(lexer);
 
-    Compiler compiler(
+    Compiler<FullInMemoryLexer> compiler(
             lexer_proxy,
             options, exit);
 
