@@ -1,5 +1,6 @@
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <pascal-s/token.h>
 #include <pascal-s/mock.h>
 #include <pascal-s/parser.h>
@@ -32,6 +33,10 @@ TEST_P(ParserMainTest, WillNotThrowException) /* NOLINT */
     Parser parser(lexer_proxy);
     auto ast = parser.parse();
     ASSERT_NE(ast, nullptr);
+    if (!parser.errors.empty()) {
+        std::cout << parser.errors[0]->what() << std::endl;
+//        ASSERT_TRUE(false);
+    }
 
     deleteAST(ast);
 }
@@ -42,14 +47,7 @@ INSTANTIATE_TEST_SUITE_P(Simple, ParserMainTest, testing::Values( /* NOLINT */
                         new Keyword(KeywordType::Program),
                         new Identifier("main"),
                         new Marker(MarkerType::Semicolon),
-                }
-        },
-        ParserTestCase{
-                {
-                        new Keyword(KeywordType::Program),
-                        new Identifier("main"),
-                        new Marker(MarkerType::LParen),
-                        new Marker(MarkerType::RParen),
+                        new Identifier("a"),
                         new Marker(MarkerType::Semicolon),
                 }
         },
@@ -60,6 +58,20 @@ INSTANTIATE_TEST_SUITE_P(Simple, ParserMainTest, testing::Values( /* NOLINT */
                         new Marker(MarkerType::LParen),
                         new Identifier("a"),
                         new Marker(MarkerType::RParen),
+                        new Marker(MarkerType::Semicolon),
+                        new Identifier("a"),
+                        new Marker(MarkerType::Semicolon),
+                }
+        },
+        ParserTestCase{
+                {
+                        new Keyword(KeywordType::Program),
+                        new Identifier("main"),
+                        new Marker(MarkerType::LParen),
+                        new Identifier("a"),
+                        new Marker(MarkerType::RParen),
+                        new Marker(MarkerType::Semicolon),
+                        new Identifier("a"),
                         new Marker(MarkerType::Semicolon),
                 }
         },
@@ -73,6 +85,8 @@ INSTANTIATE_TEST_SUITE_P(Simple, ParserMainTest, testing::Values( /* NOLINT */
                         new Identifier("b"),
                         new Marker(MarkerType::RParen),
                         new Marker(MarkerType::Semicolon),
+                        new Identifier("a"),
+                        new Marker(MarkerType::Semicolon),
                 }
         },
         ParserTestCase{
@@ -84,6 +98,8 @@ INSTANTIATE_TEST_SUITE_P(Simple, ParserMainTest, testing::Values( /* NOLINT */
                         new Identifier("a"),
                         new Marker(MarkerType::EQ),
                         new ConstantInteger("1"),
+                        new Marker(MarkerType::Semicolon),
+                        new Identifier("a"),
                         new Marker(MarkerType::Semicolon),
                 }
         }

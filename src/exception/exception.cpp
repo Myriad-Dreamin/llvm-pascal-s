@@ -26,9 +26,9 @@ const char *RuntimeReinterpretASTException::what() const noexcept {
 PascalSParseExpectTGotError::PascalSParseExpectTGotError(
         char *fn, TokenType expected, const Token *got, std::string msg) :
         PascalSParseError(fn,
-                fmt::format("runtime reinterpret node error:"
+                          fmt::format("{} parse failed:"
                             "expected type: {}, "
-                            "got: {}", expected, got != nullptr ? got->type : TokenType::Nullptr)), expected(static_cast<token_type_underlying_type>(expected)), got(got) {
+                            "got: {}", fn, expected, got != nullptr ? got->type : TokenType::Nullptr)), expected(static_cast<token_type_underlying_type>(expected)), got(got) {
     if (!msg.empty()) {
         this-> msg += ":" + msg;
     }
@@ -36,10 +36,10 @@ PascalSParseExpectTGotError::PascalSParseExpectTGotError(
 
 PascalSParseExpectSGotError::PascalSParseExpectSGotError(
         char *fn, const char *expected, const Token *got, std::string msg) :
-        PascalSParseError(fn,
-                          fmt::format("runtime reinterpret node error:"
-                                      "expected: {}, "
-                                      "got: {}", expected, got != nullptr ? got->type : TokenType::Nullptr)), expected(expected), got(got) {
+        PascalSParseError(fn,""), expected(expected), got(got) {
+    this->msg = fmt::format("{} parse failed:"
+                            "expected: {}, "
+                            "got: {}", fn, expected, got != nullptr ? got->type : TokenType::Nullptr);
     if (!msg.empty()) {
         this-> msg += ":" + msg;
     }

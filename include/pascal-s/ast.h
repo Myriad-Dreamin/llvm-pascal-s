@@ -17,6 +17,7 @@ namespace ast {
         Function,
         StatementBlock,
         ExpCall,
+        ExecStatement,
         IfElseStatement,
         ForStatement,
         ExpConstantInteger,
@@ -54,25 +55,31 @@ namespace ast {
         explicit Exp(Type type) : Node(type) {}
     };
 
+    struct Statement : public Exp {
+        explicit Statement(Type type) : Exp(type) {}
+    };
+
     struct Function : public Node {
         const Keyword *fn_def;
 
         explicit Function(const Keyword *fn_def) : fn_def(fn_def), Node(Type::Function) {}
     };
 
-    struct TypeSpec: public Node {
+    struct TypeSpec : public Node {
         explicit TypeSpec(Type type) : Node(type) {}
     };
 
-    struct BasicTypeSpec: public TypeSpec {
-        const Keyword* keyword;
-        explicit BasicTypeSpec(const Keyword* keyword) : TypeSpec(Type::BasicTypeSpec), keyword(keyword) {}
+    struct BasicTypeSpec : public TypeSpec {
+        const Keyword *keyword;
+
+        explicit BasicTypeSpec(const Keyword *keyword) : TypeSpec(Type::BasicTypeSpec), keyword(keyword) {}
     };
 
-    struct ArrayTypeSpec: public TypeSpec {
-        const Keyword* keyword;
+    struct ArrayTypeSpec : public TypeSpec {
+        const Keyword *keyword;
         std::vector<std::pair<int64_t, int64_t>> periods;
-        explicit ArrayTypeSpec(const Keyword* keyword) : TypeSpec(Type::ArrayTypeSpec), keyword(keyword) {}
+
+        explicit ArrayTypeSpec(const Keyword *keyword) : TypeSpec(Type::ArrayTypeSpec), keyword(keyword) {}
     };
 
     struct ParamList : public Node {
@@ -113,7 +120,8 @@ namespace ast {
     };
 
     struct ConstDecls : public Node {
-        std::vector<ConstDecl*> decls;
+        std::vector<ConstDecl *> decls;
+
         ConstDecls() : Node(Type::ConstDecls) {}
 
         ~ConstDecls() {
@@ -126,15 +134,18 @@ namespace ast {
     struct VarDecl : public Node {
         TypeSpec *type_spec;
         IdentList *idents;
+
         VarDecl(IdentList *idents, TypeSpec *type_spec) : Node(Type::VarDecl),
                                                           type_spec(type_spec), idents(idents) {}
+
         ~VarDecl() {
             deleteAST(idents);
         }
     };
 
     struct VarDecls : public Node {
-        std::vector<VarDecl*> decls;
+        std::vector<VarDecl *> decls;
+
         VarDecls() : Node(Type::VarDecls) {}
 
         ~VarDecls() {
@@ -148,18 +159,21 @@ namespace ast {
         Type fn_type;
         const Identifier *name;
         ParamList *params;
+        Statement *body;
 
 
         explicit Procedure(const Keyword *fn_def, const Identifier *name)
-            : Function(fn_def), fn_type(Type::Procedure), name(name), params(nullptr) {}
+                : Function(fn_def), fn_type(Type::Procedure), name(name), params(nullptr), body(nullptr) {}
 
-            ~Procedure() {
-            delete params;
+        ~Procedure() {
+            deleteAST(params);
+            deleteAST(body);
         }
     };
 
     struct FunctionDecls : public Node {
-        std::vector<Procedure*> decls;
+        std::vector<Procedure *> decls;
+
         FunctionDecls() : Node(Type::FunctionDecls) {}
 
         ~FunctionDecls() {
@@ -172,13 +186,22 @@ namespace ast {
     struct Program : public Function {
         Type fn_type;
         const Identifier *name;
-        ConstDecls *decls;
+        ConstDecls *const_decls;
+        VarDecls *var_decls;
+        FunctionDecls *fn_decls;
+        Statement *body;
 
-        explicit Program(const Keyword *program, const Identifier *name, ConstDecls *decls)
-                : Function(program), fn_type(Type::Program), name(name), decls(decls) {}
+        explicit Program(const Keyword *program, const Identifier *name,
+                ConstDecls *decls, VarDecls *var_decls, FunctionDecls *fn_decls,
+                         Statement *body)
+                : Function(program), fn_type(Type::Program), name(name),
+                  const_decls(decls), var_decls(var_decls), fn_decls(fn_decls), body(body) {}
 
         ~Program() {
-            deleteAST(decls);
+            deleteAST(const_decls);
+            deleteAST(var_decls);
+            deleteAST(fn_decls);
+            deleteAST(body);
         }
     };
 
@@ -197,6 +220,7 @@ namespace ast {
         const Marker *marker;
 
         explicit UnExp(const Marker *marker, Exp *lhs) : Exp(Type::UnExp), lhs(lhs), marker(marker) {}
+
         ~UnExp() {
             deleteAST(lhs);
         };
@@ -206,7 +230,9 @@ namespace ast {
         Exp *lhs, *rhs;
         const Marker *marker;
 
-        explicit BiExp(Exp *lhs, const Marker *marker, Exp *rhs) : Exp(Type::BiExp), lhs(lhs), rhs(rhs), marker(marker) {}
+        explicit BiExp(Exp *lhs, const Marker *marker, Exp *rhs) : Exp(Type::BiExp), lhs(lhs), rhs(rhs),
+                                                                   marker(marker) {}
+
         ~BiExp() {
             deleteAST(lhs);
             deleteAST(rhs);
@@ -218,17 +244,32 @@ namespace ast {
         VariableList *params;
 
         explicit ExpCall(const Identifier *fn, VariableList *params) : Exp(Type::ExpCall), fn(fn), params(params) {}
+
         ~ExpCall() {
             deleteAST(params);
         };
     };
 
-    struct Statement : public Exp {
-        explicit Statement(Type type) : Exp(type) {}
+    struct StatementBlock : public Statement {
+        const Keyword *key_begin, *key_end;
+        std::vector<Statement *> stmts;
+
+        StatementBlock(const Keyword *key_begin, const Keyword *key_end) : Statement(Type::StatementBlock),
+                                                                   key_begin(key_begin), key_end(key_end) {}
+
+        ~StatementBlock() {
+            for (auto stmt: stmts) {
+                deleteAST(stmt);
+            }
+        }
     };
 
-    struct StatementBlock : public Statement {
-        StatementBlock() : Statement(Type::StatementBlock) {}
+    struct ExecStatement : public Statement {
+        Exp *exp;
+        explicit ExecStatement(Exp *exp) : Statement(Type::ExecStatement), exp(exp) {}
+        ~ExecStatement() {
+            deleteAST(exp);
+        }
     };
 
     struct IfElseStatement : public Statement {
@@ -239,31 +280,31 @@ namespace ast {
         ForStatement() : Statement(Type::ForStatement) {}
     };
 
-    struct ExpConstantInteger: public Exp {
+    struct ExpConstantInteger : public Exp {
         const ConstantInteger *value;
 
         explicit ExpConstantInteger(const ConstantInteger *value) : Exp(Type::ExpConstantInteger), value(value) {}
     };
 
-    struct ExpConstantChar: public Exp {
+    struct ExpConstantChar : public Exp {
         const ConstantChar *value;
 
         explicit ExpConstantChar(const ConstantChar *value) : Exp(Type::ExpConstantChar), value(value) {}
     };
 
-    struct ExpConstantBoolean: public Exp {
+    struct ExpConstantBoolean : public Exp {
         const ConstantBoolean *value;
 
         explicit ExpConstantBoolean(const ConstantBoolean *value) : Exp(Type::ExpConstantBoolean), value(value) {}
     };
 
-    struct ExpConstantString: public Exp {
+    struct ExpConstantString : public Exp {
         const ConstantString *value;
 
         explicit ExpConstantString(const ConstantString *value) : Exp(Type::ExpConstantString), value(value) {}
     };
 
-    struct ExpConstantReal: public Exp {
+    struct ExpConstantReal : public Exp {
         const ConstantReal *value;
 
         explicit ExpConstantReal(const ConstantReal *value) : Exp(Type::ExpConstantReal), value(value) {}

@@ -15,9 +15,9 @@ class Parser {
     LexerProxy<Lexer> lexer;
     const Token* current_token;
 
-    std::vector<PascalSError*> ErrorList;
-
 public:
+    std::vector<PascalSError*> errors;
+
     explicit Parser(LexerProxy<Lexer> lexer);
 
     ast::Node *parse();

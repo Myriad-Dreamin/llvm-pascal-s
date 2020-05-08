@@ -28,6 +28,9 @@ void ast::deleteAST(Node *node) {
         case Type::ExpCall:
             delete reinterpret_cast<ast::ExpCall*>(node);
             break;
+        case Type::ExecStatement:
+            delete reinterpret_cast<ast::ExecStatement*>(node);
+            break;
         case Type::IfElseStatement:
             delete reinterpret_cast<ast::IfElseStatement*>(node);
             break;
