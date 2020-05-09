@@ -384,7 +384,139 @@ ast::ArrayTypeSpec *Parser<Lexer>::parse_array_type(const Keyword *keyword_array
         next_token();
         return new ast::ArrayTypeSpec(peroids, basic);
     }
+
     errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", basic));
+    return nullptr;
+}
+
+template<typename Lexer>
+ast::FunctionDecls *Parser<Lexer>::parse_function_decls() {
+
+    // look ahead
+    if (predicate::is_function(current_token) || predicate::is_procedure(current_token)) {
+
+        // procedure or function
+        return _parse_function_decls(new ast::FunctionDecls);
+    }
+    return nullptr;
+}
+
+template<typename Lexer>
+ast::FunctionDecls *Parser<Lexer>::_parse_function_decls(ast::FunctionDecls *decls) {
+
+    // function head
+    ast::Procedure *proc = parse_function_head();
+    if (proc == nullptr) {
+        return decls;
+    }
+
+    // function should with type
+    if (predicate::is_function(proc->fn_def)) {
+
+        // :
+        expected_enum_type_r(predicate::is_colon, predicate::marker_colon, decls);
+        next_token();
+
+        // basic type
+        auto basic = reinterpret_cast<const Keyword *>(current_token);
+        if (
+                basic->key_type == KeywordType::Integer ||
+                basic->key_type == KeywordType::Real ||
+                basic->key_type == KeywordType::Char ||
+                basic->key_type == KeywordType::Boolean
+                ) {
+            next_token();
+            proc->fn_def = basic;
+        } else {
+            errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", basic));
+            delete proc;
+            return decls;
+        }
+    }
+
+    // ;
+    expected_enum_type_r(predicate::is_semicolon, predicate::marker_semicolon, decls);
+    next_token();
+
+    // function body
+    proc = parse_function_body(proc);
+    if (proc != nullptr) {
+        decls->decls.push_back(proc);
+    }
+
+    // look ahead
+    if (predicate::is_function(current_token) || predicate::is_procedure(current_token)) {
+        return _parse_function_decls(decls);
+    }
+
+    return decls;
+}
+
+template<typename Lexer>
+ast::Procedure *Parser<Lexer>::parse_function_head() {
+    // keyword procedure or function
+    auto fn_def = reinterpret_cast<const Keyword *>(current_token);
+
+    // id
+    auto ident = reinterpret_cast<const Identifier *>(next_token());
+    expected_type(TokenType::Identifier);
+    next_token();
+
+    // share common struct type Procedure
+    auto proc = new ast::Procedure(fn_def, ident);
+
+    // param list
+    if (predicate::is_lparen(current_token)) {
+        proc->params = parse_param_list_with_paren();
+        if (proc->params == nullptr) {
+            delete proc;
+            return nullptr;
+        }
+    }
+
+    return proc;
+}
+
+template<typename Lexer>
+ast::Statement *Parser<Lexer>::parse_statement() {
+    if (predicate::is_begin(current_token)) {
+        auto begin_tok = reinterpret_cast<const Keyword *>(current_token);
+        next_token();
+        std::vector<ast::Statement *> stmts;
+        while (!predicate::is_end(current_token)) {
+            if (current_token == nullptr) {
+                throw std::invalid_argument("bad ... eof");
+            }
+            auto stmt = parse_statement();
+            if (stmt == nullptr) {
+                for (auto stmt : stmts) {
+                    ast::deleteAST(stmt);
+                }
+                return nullptr;
+            }
+            stmts.push_back(stmt);
+            if (predicate::is_semicolon(current_token)) {
+                next_token();
+            }
+        }
+        auto end_tok = reinterpret_cast<const Keyword *>(current_token);
+        next_token();
+        auto block = new ast::StatementBlock(begin_tok, end_tok);
+        block->stmts.swap(stmts);
+        return block;
+    } else if (current_token != nullptr && (current_token->type == TokenType::Identifier)) {
+        auto exp = parse_exp(&predicate::predicateContainers.semicolonContainer);
+        if (exp == nullptr) {
+            return nullptr;
+        } else {
+            return new ast::ExecStatement(exp);
+        }
+    } else if (predicate::is_for(current_token)) {
+        //todo for
+    } else if (predicate::is_if(current_token)) {
+        //todo if
+    }
+    errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "statement", current_token));
     return nullptr;
 }
 
@@ -527,117 +659,6 @@ Parser<Lexer>::parse_binary_exp(ast::Exp *lhs, const Marker *marker, marker_type
                                 next_marker, pri, till);
     }
     return new ast::BiExp(lhs, marker, parse_binary_exp(rhs, next_marker, pri, till));
-}
-
-
-template<typename Lexer>
-ast::FunctionDecls *Parser<Lexer>::parse_function_decls() {
-
-    if (predicate::is_function(current_token) || predicate::is_procedure(current_token)) {
-        return _parse_function_decls(new ast::FunctionDecls);
-    }
-    return nullptr;
-}
-
-template<typename Lexer>
-ast::FunctionDecls *Parser<Lexer>::_parse_function_decls(ast::FunctionDecls *decls) {
-    ast::Procedure *proc = parse_function_head();
-    if (proc == nullptr) {
-        return decls;
-    }
-    if (predicate::is_function(proc->fn_def)) {
-
-        expected_enum_type_r(predicate::is_colon, predicate::marker_colon, decls);
-        next_token();
-        auto basic = reinterpret_cast<const Keyword *>(current_token);
-        if (
-                basic->key_type == KeywordType::Integer ||
-                basic->key_type == KeywordType::Real ||
-                basic->key_type == KeywordType::Char ||
-                basic->key_type == KeywordType::Boolean
-                ) {
-            next_token();
-            proc->fn_def = basic;
-        } else {
-            errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", basic));
-            delete proc;
-            return decls;
-        }
-    }
-    expected_enum_type_r(predicate::is_semicolon, predicate::marker_semicolon, decls);
-    next_token();
-
-    proc = parse_function_body(proc);
-    if (proc != nullptr) {
-        decls->decls.push_back(proc);
-    }
-
-    if (predicate::is_function(current_token) || predicate::is_procedure(current_token)) {
-        return _parse_function_decls(decls);
-    }
-    return decls;
-}
-
-template<typename Lexer>
-ast::Procedure *Parser<Lexer>::parse_function_head() {
-    auto fn_def = reinterpret_cast<const Keyword *>(current_token);
-
-    auto ident = reinterpret_cast<const Identifier *>(next_token());
-    expected_type(TokenType::Identifier);
-    next_token();
-
-    auto proc = new ast::Procedure(fn_def, ident);
-    if (predicate::is_lparen(current_token)) {
-        proc->params = parse_param_list_with_paren();
-        if (proc->params == nullptr) {
-            delete proc;
-            return nullptr;
-        }
-    }
-    return proc;
-}
-
-template<typename Lexer>
-ast::Statement *Parser<Lexer>::parse_statement() {
-    if (predicate::is_begin(current_token)) {
-        auto begin_tok = reinterpret_cast<const Keyword *>(current_token);
-        next_token();
-        std::vector<ast::Statement *> stmts;
-        while (!predicate::is_end(current_token)) {
-            if (current_token == nullptr) {
-                throw std::invalid_argument("bad ... eof");
-            }
-            auto stmt = parse_statement();
-            if (stmt == nullptr) {
-                for (auto stmt : stmts) {
-                    ast::deleteAST(stmt);
-                }
-                return nullptr;
-            }
-            stmts.push_back(stmt);
-            if (predicate::is_semicolon(current_token)) {
-                next_token();
-            }
-        }
-        auto end_tok = reinterpret_cast<const Keyword *>(current_token);
-        next_token();
-        auto block = new ast::StatementBlock(begin_tok, end_tok);
-        block->stmts.swap(stmts);
-        return block;
-    } else if (current_token != nullptr && (current_token->type == TokenType::Identifier)) {
-        auto exp = parse_exp(&predicate::predicateContainers.semicolonContainer);
-        if (exp == nullptr) {
-            return nullptr;
-        } else {
-            return new ast::ExecStatement(exp);
-        }
-    } else if (predicate::is_for(current_token)) {
-        //todo for
-    } else if (predicate::is_if(current_token)) {
-        //todo if
-    }
-    errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "statement", current_token));
-    return nullptr;
 }
 
 
