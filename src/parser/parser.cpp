@@ -255,58 +255,82 @@ ast::Exp *Parser<Lexer>::parse_const_fac() {
 
     next_token();
 
-
     return exp;
 }
 
 template<typename Lexer>
 ast::VarDecls *Parser<Lexer>::parse_var_decls() {
+
+    //var
     expected_enum_type(predicate::is_var, predicate::keyword_var);
     next_token();
+
+    // look ahead
     expected_type_r(TokenType::Identifier, nullptr);
     return _parse_var_decls(new ast::VarDecls);
 }
 
 template<typename Lexer>
 ast::VarDecls *Parser<Lexer>::_parse_var_decls(ast::VarDecls *decls) {
-    if (current_token == nullptr || current_token->type != TokenType::Identifier) {
-        return decls;
-    }
 
+    // declaration
     auto decl = parse_var_decl();
     if (decl == nullptr) {
         return decls;
     }
-
     decls->decls.push_back(decl);
+
+    // look ahead
+    if (current_token == nullptr || current_token->type != TokenType::Identifier) {
+        return decls;
+    }
     return _parse_var_decls(decls);
 }
 
 template<typename Lexer>
 ast::VarDecl *Parser<Lexer>::parse_var_decl() {
+
+    // id list
     auto id_list = parse_id_list();
+    if (id_list == nullptr) {
+        return nullptr;
+    }
+
+    // :
     expected_enum_type(predicate::is_colon, predicate::marker_colon);
     next_token();
+
+    // type
     auto type = parse_type();
+    if (type == nullptr) {
+        return nullptr;
+    }
+
+    // ;
     expected_enum_type(predicate::is_semicolon, predicate::marker_semicolon);
     next_token();
+
+
     return new ast::VarDecl(id_list, type);
 }
 
 template<typename Lexer>
 ast::TypeSpec *Parser<Lexer>::parse_type() {
-
+    // next token == array | basic_type, all belong to keyword
     if (current_token == nullptr || current_token->type != TokenType::Keyword) {
         errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "type spec", current_token));
         return nullptr;
     }
 
+
     auto array_or_basic = reinterpret_cast<const Keyword *>(current_token);
+
+    // array
     if (array_or_basic->key_type == KeywordType::Array) {
         next_token();
         return parse_array_type(array_or_basic);
-    }
-    if (
+    } else if (
+        // basic type
             array_or_basic->key_type == KeywordType::Integer ||
             array_or_basic->key_type == KeywordType::Real ||
             array_or_basic->key_type == KeywordType::Char ||
@@ -314,21 +338,42 @@ ast::TypeSpec *Parser<Lexer>::parse_type() {
             ) {
         next_token();
         return new ast::BasicTypeSpec(array_or_basic);
-    } else {
-        errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", array_or_basic));
     }
+    errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", array_or_basic));
     return nullptr;
 }
 
 template<typename Lexer>
 ast::ArrayTypeSpec *Parser<Lexer>::parse_array_type(const Keyword *keyword_array) {
+
+    // [
     expected_enum_type(predicate::is_lbracket, predicate::marker_lbracket);
     next_token();
-    //todo: parse period
+
+    expected_enum_type(predicate::is_integer, predicate::keyword_integer);
+    std::vector<std::pair<const ConstantInteger *, const ConstantInteger *>> periods;
+    // digit
+    while (predicate::is_integer(current_token)) {
+        auto l_range = reinterpret_cast<const ConstantInteger *>(current_token);
+
+        // ..
+        expected_enum_type(predicate::is_range, predicate::marker_range);
+        next_token();
+
+        // digit
+        expected_enum_type(predicate::is_integer, predicate::keyword_integer);
+        periods.emplace_back(l_range, reinterpret_cast<const ConstantInteger *>(current_token));
+    }
+
+    // ]
     expected_enum_type(predicate::is_rbracket, predicate::marker_rbracket);
     next_token();
+
+    // of
     expected_enum_type(predicate::is_of, predicate::keyword_of);
     next_token();
+
+    // basic_type
     auto basic = reinterpret_cast<const Keyword *>(current_token);
     if (
             basic->key_type == KeywordType::Integer ||
@@ -337,10 +382,9 @@ ast::ArrayTypeSpec *Parser<Lexer>::parse_array_type(const Keyword *keyword_array
             basic->key_type == KeywordType::Boolean
             ) {
         next_token();
-        return new ast::ArrayTypeSpec(basic);
-    } else {
-        errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", basic));
+        return new ast::ArrayTypeSpec(peroids, basic);
     }
+    errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", basic));
     return nullptr;
 }
 

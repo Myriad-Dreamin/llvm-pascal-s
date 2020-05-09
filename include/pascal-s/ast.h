@@ -79,9 +79,12 @@ namespace ast {
 
     struct ArrayTypeSpec : public TypeSpec {
         const Keyword *keyword;
-        std::vector<std::pair<int64_t, int64_t>> periods;
+        std::vector<std::pair<const ConstantInteger *, const ConstantInteger *>> periods;
 
-        explicit ArrayTypeSpec(const Keyword *keyword) : TypeSpec(Type::ArrayTypeSpec), keyword(keyword) {}
+        explicit ArrayTypeSpec(
+                std::vector<std::pair<const ConstantInteger *, const ConstantInteger *>> &periods,
+                const Keyword *keyword) : TypeSpec(Type::ArrayTypeSpec), periods(std::move(periods)),
+                                          keyword(keyword) {}
     };
 
     struct ParamList : public Node {
