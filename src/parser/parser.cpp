@@ -477,6 +477,49 @@ ast::Procedure *Parser<Lexer>::parse_function_head() {
     return proc;
 }
 
+
+template<typename Lexer>
+ast::Procedure *Parser<Lexer>::parse_function_body(ast::Procedure *proc) {
+
+    // const declarations
+    ast::ConstDecls *const_decls = nullptr;
+    if (predicate::is_const(current_token)) {
+        proc->const_decls = parse_const_decls();
+    }
+
+    // var declarations
+    if (predicate::is_var(current_token)) {
+        proc->var_decls = parse_var_decls();
+    }
+
+
+    proc->body = parse_statement();
+    return proc;
+}
+
+template<typename Lexer>
+ast::ParamList *Parser<Lexer>::parse_param_list_with_paren() {
+    expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
+    next_token();
+    auto param_list = parse_param_list();
+    if (param_list == nullptr) {
+        return nullptr;
+    }
+    if (!predicate::is_rparen(current_token)) {
+        delete param_list;
+        errors.push_back(new PascalSParseExpectGotError(__FUNCTION__, &predicate::marker_rparen, current_token));
+        return nullptr;
+    }
+    next_token();
+    return param_list;
+}
+
+template<typename Lexer>
+ast::ParamList *Parser<Lexer>::parse_param_list() {
+    //todo: param list
+    return nullptr;
+}
+
 template<typename Lexer>
 ast::Statement *Parser<Lexer>::parse_statement() {
     if (predicate::is_begin(current_token)) {
@@ -663,31 +706,6 @@ Parser<Lexer>::parse_binary_exp(ast::Exp *lhs, const Marker *marker, marker_type
 
 
 template<typename Lexer>
-ast::Procedure *Parser<Lexer>::parse_function_body(ast::Procedure *proc) {
-    proc->body = parse_statement();
-    //todo: handler proc->body == nullptr
-    return proc;
-}
-
-template<typename Lexer>
-ast::ParamList *Parser<Lexer>::parse_param_list_with_paren() {
-    expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
-    next_token();
-    auto param_list = parse_param_list();
-    if (param_list == nullptr) {
-        return nullptr;
-    }
-    if (!predicate::is_rparen(current_token)) {
-        delete param_list;
-        errors.push_back(new PascalSParseExpectGotError(__FUNCTION__, &predicate::marker_rparen, current_token));
-        return nullptr;
-    }
-    next_token();
-    return param_list;
-}
-
-
-template<typename Lexer>
 ast::VariableList *Parser<Lexer>::parse_variable_list_with_paren() {
     expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
     next_token();
@@ -702,12 +720,6 @@ ast::VariableList *Parser<Lexer>::parse_variable_list_with_paren() {
     }
     next_token();
     return var_list;
-}
-
-template<typename Lexer>
-ast::ParamList *Parser<Lexer>::parse_param_list() {
-    //todo: param list
-    return nullptr;
 }
 
 template<typename Lexer>

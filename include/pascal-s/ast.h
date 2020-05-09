@@ -61,12 +61,6 @@ namespace ast {
         explicit Statement(Type type) : Exp(type) {}
     };
 
-    struct Function : public Node {
-        const Keyword *fn_def;
-
-        explicit Function(const Keyword *fn_def) : fn_def(fn_def), Node(Type::Function) {}
-    };
-
     struct TypeSpec : public Node {
         explicit TypeSpec(Type type) : Node(type) {}
     };
@@ -160,19 +154,38 @@ namespace ast {
         }
     };
 
-    struct Procedure : public Function {
+    struct Function : public Node {
+        const Keyword *fn_def;
         Type fn_type;
         const Identifier *name;
-        ParamList *params;
+        ConstDecls *const_decls;
+        VarDecls *var_decls;
         Statement *body;
+
+        explicit Function(
+                const Identifier *name, const Keyword *fn_def,
+                ConstDecls *const_decls, VarDecls *var_decls,
+                Statement *body) : fn_def(fn_def), Node(Type::Function), name(name),
+                                   const_decls(const_decls), var_decls(var_decls), body(body), fn_type(Type::Unknown) {}
+
+        ~Function() {
+            deleteAST(const_decls);
+            deleteAST(var_decls);
+            deleteAST(body);
+        }
+    };
+
+    struct Procedure : public Function {
+        ParamList *params;
 
 
         explicit Procedure(const Keyword *fn_def, const Identifier *name)
-                : Function(fn_def), fn_type(Type::Procedure), name(name), params(nullptr), body(nullptr) {}
+                : Function(name, fn_def, nullptr, nullptr, nullptr), params(nullptr) {
+            fn_type = Type::Procedure;
+        }
 
         ~Procedure() {
             deleteAST(params);
-            deleteAST(body);
         }
     };
 
@@ -189,26 +202,18 @@ namespace ast {
     };
 
     struct Program : public Function {
-        Type fn_type;
-        const Identifier *name;
         IdentList *idents;
-        ConstDecls *const_decls;
-        VarDecls *var_decls;
         FunctionDecls *fn_decls;
-        Statement *body;
 
         explicit Program(const Keyword *program, const Identifier *name, IdentList *idents,
-                         ConstDecls *decls, VarDecls *var_decls, FunctionDecls *fn_decls,
+                         ConstDecls *const_decls, VarDecls *var_decls, FunctionDecls *fn_decls,
                          Statement *body)
-                : Function(program), fn_type(Type::Program), name(name), idents(idents),
-                  const_decls(decls), var_decls(var_decls), fn_decls(fn_decls), body(body) {}
+                : Function(name, program, const_decls, var_decls, body), idents(idents), fn_decls(fn_decls) {
+            fn_type = Type::Program;
+        }
 
         ~Program() {
-            deleteAST(idents);
-            deleteAST(const_decls);
-            deleteAST(var_decls);
             deleteAST(fn_decls);
-            deleteAST(body);
         }
     };
 
