@@ -33,27 +33,41 @@ public:
     ast::VariableList *parse_variable_list();
 
     ast::ConstDecls *parse_const_decls();
+
     ast::ConstDecl *parse_const_decl();
+
     ast::VarDecls *parse_var_decls();
+
     ast::VarDecl *parse_var_decl();
+
     ast::Procedure *parse_function_head();
-    ast::Procedure *parse_function_body(ast::Procedure*);
+
+    ast::Procedure *parse_function_body(ast::Procedure *);
+
     ast::FunctionDecls *parse_function_decls();
 
     ast::TypeSpec *parse_type();
-    ast::ArrayTypeSpec *parse_array_type(const Keyword* keyword_array);
 
-    ast::Exp *parse_const_exp();
+    ast::ArrayTypeSpec *parse_array_type(const Keyword *keyword_array);
+
+    ast::Exp *parse_const_exp(const std::vector<Token *> *till = nullptr);
+
+    ast::Exp *parse_const_fac();
+
     ast::Exp *parse_exp(const std::vector<Token *> *till = nullptr);
+
     ast::Exp *parse_binary_exp(ast::Exp *lhs, const Marker *marker, marker_type_underlying_type current_marker_pri,
-            const std::vector<Token *> *till = nullptr);
+                               const std::vector<Token *> *till = nullptr);
+
     ast::Exp *parse_fac();
+
     ast::Statement *parse_statement();
 
-    const Token* next_token();
+    const Token *next_token();
 
 private:
     ast::IdentList *_parse_id_list(ast::IdentList *);
+
     ast::ConstDecls *_parse_const_decls(ast::ConstDecls *);
     ast::VarDecls *_parse_var_decls(ast::VarDecls *);
     ast::FunctionDecls *_parse_function_decls(ast::FunctionDecls *decls);

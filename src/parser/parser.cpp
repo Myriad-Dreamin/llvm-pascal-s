@@ -32,6 +32,12 @@ template<typename Lexer>
 Parser<Lexer>::Parser(LexerProxy<Lexer> lexer) : lexer(std::move(lexer)) {}
 
 template<typename Lexer>
+const Token *Parser<Lexer>::next_token() {
+    current_token = lexer.next_token();
+    return current_token;
+}
+
+template<typename Lexer>
 ast::Node *Parser<Lexer>::parse() {
     next_token();
     return parse_program_struct();
@@ -82,23 +88,48 @@ ast::Program *Parser<Lexer>::parse_program_struct() {
 }
 
 template<typename Lexer>
-const Token *Parser<Lexer>::next_token() {
-    current_token = lexer.next_token();
-    return current_token;
+ast::IdentList *Parser<Lexer>::parse_id_list_with_paren() {
+
+    // lparen
+    expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
+    next_token();
+
+    // id list
+    auto ident_list = parse_id_list();
+    if (ident_list == nullptr) {
+        return nullptr;
+    }
+
+    // rparen
+    if (!predicate::is_rparen(current_token)) {
+        delete ident_list;
+        errors.push_back(new PascalSParseExpectGotError(__FUNCTION__, &predicate::marker_rparen, current_token));
+        return nullptr;
+    }
+    next_token();
+
+    return ident_list;
 }
 
 template<typename Lexer>
 ast::IdentList *Parser<Lexer>::parse_id_list() {
+    // allocate
     return _parse_id_list(new ast::IdentList);
 }
 
 template<typename Lexer>
 ast::IdentList *Parser<Lexer>::_parse_id_list(ast::IdentList *params) {
+
+    // id
     expected_type_r(TokenType::Identifier, params);
     params->idents.push_back(reinterpret_cast<const Identifier *>(current_token));
     next_token();
+
+    // ,
     if (predicate::is_comma(current_token)) {
         next_token();
+
+        // id list
         _parse_id_list(params);
     }
     return params;
@@ -106,77 +137,125 @@ ast::IdentList *Parser<Lexer>::_parse_id_list(ast::IdentList *params) {
 
 template<typename Lexer>
 ast::ConstDecls *Parser<Lexer>::parse_const_decls() {
+
+    // const
     expected_enum_type(predicate::is_const, predicate::keyword_const);
     next_token();
+
+    // look ahead
     expected_type_r(TokenType::Identifier, nullptr);
+
+    // declarations
     return _parse_const_decls(new ast::ConstDecls);
 }
 
 template<typename Lexer>
-ast::ConstDecl *Parser<Lexer>::parse_const_decl() {
-    expected_type_r(TokenType::Identifier, nullptr);
-    auto ident = reinterpret_cast<const Identifier *>(current_token);
-    next_token();
-    expected_enum_type(predicate::is_eq, predicate::marker_eq);
-    next_token();
-    auto decl = new ast::ConstDecl(ident, parse_const_exp());
-    expected_enum_type(predicate::is_semicolon, predicate::marker_semicolon);
-    next_token();
-    return decl;
-}
-
-
-template<typename Lexer>
 ast::ConstDecls *Parser<Lexer>::_parse_const_decls(ast::ConstDecls *decls) {
-    if (current_token == nullptr || current_token->type != TokenType::Identifier) {
-        return decls;
-    }
 
+    // declaration
     auto decl = parse_const_decl();
     if (decl == nullptr) {
         return decls;
     }
-
     decls->decls.push_back(decl);
+
+    // look ahead
+    if (current_token == nullptr || current_token->type != TokenType::Identifier) {
+        return decls;
+    }
     return _parse_const_decls(decls);
 }
 
 template<typename Lexer>
-ast::Exp *Parser<Lexer>::parse_const_exp() {
+ast::ConstDecl *Parser<Lexer>::parse_const_decl() {
+    // id
+    expected_type_r(TokenType::Identifier, nullptr);
+    auto ident = reinterpret_cast<const Identifier *>(current_token);
+    next_token();
 
+    // =
+    expected_enum_type(predicate::is_eq, predicate::marker_eq);
+    next_token();
+
+    // const exp
+    auto decl = new ast::ConstDecl(ident, parse_const_exp());
+
+    // ;
+    expected_enum_type(predicate::is_semicolon, predicate::marker_semicolon);
+    next_token();
+
+    return decl;
+}
+
+template<typename Lexer>
+ast::Exp *Parser<Lexer>::parse_const_exp(const std::vector<Token *> *till) {
+
+    auto *fac = parse_const_fac();
+    if (fac == nullptr) {
+        return nullptr;
+    }
+
+    if (predicate::token_equal(current_token, till)) {
+        next_token();
+        return fac;
+    }
+
+    assert(false);
+    // todo: parse recursive const exp
+    return nullptr;
+}
+
+template<typename Lexer>
+ast::Exp *Parser<Lexer>::parse_const_fac() {
     if (current_token == nullptr) {
         errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "const value", current_token));
         return nullptr;
     }
-    auto rhs = current_token;
-    ast::Exp *exp = nullptr;
+
+    if (current_token->type == TokenType::Marker) {
+        auto marker = reinterpret_cast<const Marker *>(current_token);
+        switch (marker->marker_type) {
+            case MarkerType::Add:
+            case MarkerType::Sub:
+                next_token();
+                return new ast::UnExp(marker, parse_const_exp());
+            case MarkerType::LParen:
+                next_token();
+                return parse_const_exp(&predicate::predicateContainers.rParenContainer);
+            default:
+                throw std::runtime_error("expected +/-/(");
+        }
+    }
+
+    // parse const fac
+    ast::Exp *maybe_lhs = nullptr;
     if (current_token->type == TokenType::ConstantInteger) {
-        exp = new ast::ExpConstantInteger(
+        maybe_lhs = new ast::ExpConstantInteger(
                 reinterpret_cast<const ConstantInteger *>(current_token));
     }
     if (current_token->type == TokenType::ConstantChar) {
-        exp = new ast::ExpConstantChar(
+        maybe_lhs = new ast::ExpConstantChar(
                 reinterpret_cast<const ConstantChar *>(current_token));
     }
     if (current_token->type == TokenType::ConstantString) {
-        exp = new ast::ExpConstantString(
+        maybe_lhs = new ast::ExpConstantString(
                 reinterpret_cast<const ConstantString *>(current_token));
     }
     if (current_token->type == TokenType::ConstantReal) {
-        exp = new ast::ExpConstantReal(
+        maybe_lhs = new ast::ExpConstantReal(
                 reinterpret_cast<const ConstantReal *>(current_token));
     }
     if (current_token->type == TokenType::ConstantBoolean) {
-        exp = new ast::ExpConstantBoolean(
+        maybe_lhs = new ast::ExpConstantBoolean(
                 reinterpret_cast<const ConstantBoolean *>(current_token));
     }
-    if (exp == nullptr) {
+    if (maybe_lhs == nullptr) {
         return nullptr;
     }
 
-    // todo: parse recursive const exp
-
     next_token();
+
+
     return exp;
 }
 
@@ -526,23 +605,6 @@ ast::Procedure *Parser<Lexer>::parse_function_body(ast::Procedure *proc) {
 }
 
 template<typename Lexer>
-ast::IdentList *Parser<Lexer>::parse_id_list_with_paren() {
-    expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
-    next_token();
-    auto ident_list = parse_id_list();
-    if (ident_list == nullptr) {
-        return nullptr;
-    }
-    if (!predicate::is_rparen(current_token)) {
-        delete ident_list;
-        errors.push_back(new PascalSParseExpectGotError(__FUNCTION__, &predicate::marker_rparen, current_token));
-        return nullptr;
-    }
-    next_token();
-    return ident_list;
-}
-
-template<typename Lexer>
 ast::ParamList *Parser<Lexer>::parse_param_list_with_paren() {
     expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
     next_token();
@@ -603,3 +665,7 @@ ast::VariableList *Parser<Lexer>::parse_variable_list() {
 
 
 #undef expected_keyword
+#undef expected_enum_type
+#undef expected_enum_type_r
+#undef expected_type_r
+#undef expected_type
