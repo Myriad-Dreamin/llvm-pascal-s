@@ -45,6 +45,8 @@ namespace ast {
 
     void deleteAST(Node *node);
 
+    void printAST(Node *node, int dep = 0);
+
     struct Node {
         Type type;
 

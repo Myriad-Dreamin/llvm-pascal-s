@@ -139,12 +139,9 @@ struct ConstantInteger : public Token {
 };
 
 struct ConstantChar : public Token {
-    const char *content;
-    const char *attr;
+    char value;
 
-    ConstantChar(const char *content);
-
-    ~ConstantChar();
+    explicit ConstantChar(const char *content);
 };
 
 struct Identifier : public Token {

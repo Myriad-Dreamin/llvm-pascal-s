@@ -55,11 +55,11 @@ struct CompilerOptions {
                        "Output path",
                        cat_compile_options, "main.o", "o");
         parser.addOpts("out-ir", &out_with_ir,
-                       "Output IR code, enum of {json, yml, fmt, binary, console}",
-                       cat_compile_options, "binary", "f");
+                       "Output IR code, enum of {, json, yml, fmt, binary, console}",
+                       cat_compile_options, "", "f");
         parser.addOpts("out-token", &out_with_token,
-                       "Output tokens, enum of {json, yml, fmt, binary, console}",
-                       cat_compile_options, "binary", "tf");
+                       "Output tokens, enum of {, json, yml, fmt, binary, console}",
+                       cat_compile_options, "", "tf");
     }
 
     ~CompilerOptions() {
@@ -149,6 +149,8 @@ private:
 
         task.target = options.out_path;
         task.source = parser.parse();
+
+        task.out_ir = !options.out_with_ir.empty();
 
         _exit(target_compile(argc, argv, &task));
     }

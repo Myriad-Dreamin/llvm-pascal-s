@@ -283,7 +283,10 @@ ast::Exp *Parser<Lexer>::parse_exp(const std::vector<Token *> *till) {
                 return nullptr;
         }
     } else {
-        throw std::runtime_error("want marker, got ?");
+        throw std::runtime_error(
+                std::string("want marker, got ") + fmt::format("{}",
+                                                               convertToString(current_token))
+        );
     }
 
 }
@@ -306,6 +309,26 @@ ast::Exp *Parser<Lexer>::parse_fac() {
                 reinterpret_cast<const ConstantInteger *>(current_token));
         next_token();
         return num;
+    } else if (current_token->type == TokenType::ConstantChar) {
+        auto num = new ast::ExpConstantChar(
+                reinterpret_cast<const ConstantChar *>(current_token));
+        next_token();
+        return num;
+    } else if (current_token->type == TokenType::ConstantReal) {
+        auto num = new ast::ExpConstantReal(
+                reinterpret_cast<const ConstantReal *>(current_token));
+        next_token();
+        return num;
+    } else if (current_token->type == TokenType::ConstantString) {
+        auto num = new ast::ExpConstantString(
+                reinterpret_cast<const ConstantString *>(current_token));
+        next_token();
+        return num;
+    } else if (current_token->type == TokenType::ConstantBoolean) {
+        auto num = new ast::ExpConstantBoolean(
+                reinterpret_cast<const ConstantBoolean *>(current_token));
+        next_token();
+        return num;
     } else if (current_token->type == TokenType::Marker) {
         auto marker = reinterpret_cast<const Marker *>(current_token);
         switch (marker->marker_type) {
@@ -325,9 +348,8 @@ ast::Exp *Parser<Lexer>::parse_fac() {
         if (current_token != nullptr && current_token->type == TokenType::Marker) {
             auto marker = reinterpret_cast<const Marker *>(current_token);
             if (marker->marker_type == MarkerType::LParen) {
-                next_token();
                 return new ast::ExpCall(
-                        ident, parse_variable_list());
+                        ident, parse_variable_list_with_paren());
             }
         }
         return new ast::Ident(ident);
@@ -537,18 +559,19 @@ ast::ParamList *Parser<Lexer>::parse_param_list() {
 
 template<typename Lexer>
 ast::VariableList *Parser<Lexer>::parse_variable_list() {
-//    for (;;) {
-//        if (predicate::token_equal(&rParen, current_token)) {
-//            next_token();
-//            return params;
-//        }
-//        params->push_back(parse_exp());
-//        if (predicate::token_equal(&dot, current_token)) {
-//            next_token();
-//        } else if (!predicate::token_equal(&rParen, current_token)) {
-//            throw std::runtime_error("expected ,/)");
-//        }
-//    }
+    auto *ret = new ast::VariableList;
+    for (;;) {
+        if (predicate::is_rparen(current_token)) {
+            return ret;
+        }
+        ret->params.push_back(parse_exp());
+        if (predicate::is_comma(current_token)) {
+            next_token();
+        } else if (!predicate::is_rparen(current_token)) {
+            delete ret;
+            throw std::runtime_error("expected ,/)");
+        }
+    }
     return nullptr;
 }
 

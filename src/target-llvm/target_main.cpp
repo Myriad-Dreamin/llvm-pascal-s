@@ -29,9 +29,10 @@ const char *pascal_main_function_name = "pascal_s_main_520d4d14";
 
     assert(value != nullptr);
 
-    value->print(os, true);
-    std::cout << buf;
-
+    if (task->out_ir) {
+        value->print(os, true);
+        std::cout << buf;
+    }
 //    llvm::InitializeAllTargetInfos();
 //    llvm::InitializeAllTargets();
 //    llvm::InitializeAllTargetMCs();
@@ -64,7 +65,6 @@ const char *pascal_main_function_name = "pascal_s_main_520d4d14";
             Target->createTargetMachine(target_triple, CPU, Features, opt, RM);
     builder.modules.setDataLayout(machine->createDataLayout());
 
-
     std::error_code EC;
     llvm::raw_fd_ostream dest(task->target, EC, llvm::sys::fs::OF_None);
     if (EC) {
@@ -83,7 +83,9 @@ const char *pascal_main_function_name = "pascal_s_main_520d4d14";
     pass.run(builder.modules);
     dest.flush();
 
-    std::cout << "Wrote " << task->target << "\n";
+//    std::cout << "Wrote " << task->target << "\n";
+
+    dest.close();
 
     return 0;
 }

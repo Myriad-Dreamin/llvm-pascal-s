@@ -8,6 +8,7 @@
 struct CompilerTargetTask {
     ast::Node *source;
     std::string target;
+    bool out_ir;
 };
 
 #endif //PASCAL_S_TARGET_TASK_H

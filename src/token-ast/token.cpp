@@ -52,7 +52,7 @@ std::string convertToString(const Token *pToken) {
                                reinterpret_cast<const ConstantInteger *>(pToken)->content);
         case TokenType::ConstantChar:
             return fmt::format("{{ .type = ConstantChar .content = {} }}",
-                               reinterpret_cast<const ConstantChar *>(pToken)->content);
+                               reinterpret_cast<const ConstantChar *>(pToken)->value);
         case TokenType::Identifier:
             return fmt::format("{{ .type = Identifier .content = {} }}",
                                reinterpret_cast<const Identifier *>(pToken)->content);
@@ -88,17 +88,39 @@ ConstantInteger::~ConstantInteger() {
     delete[]content;
 }
 
-ConstantChar::ConstantChar(const char *cchar) : Token() {
-    this->type = TokenType::ConstantChar;
-    int l = strlen(cchar);
-    this->content = new char[l + 1];
-    strcpy(const_cast<char *>(content), cchar);
-    this->attr = content;
+namespace char_spec {
+    static struct _spec_char_map_t {
+        char inner[128]{};
+
+        explicit _spec_char_map_t() noexcept {
+            inner['n'] = '\n';
+            inner['t'] = '\t';
+            inner['r'] = '\r';
+            inner['\\'] = '\\';
+//            inner['n'] = '\n';
+        }
+
+        char operator[](char a) {
+            assert(inner[a] != 0);
+            return inner[a];
+        }
+    } spec_char_map;
 }
 
-ConstantChar::~ConstantChar() {
-    delete[]content;
+ConstantChar::ConstantChar(const char *cchar) : Token() {
+    this->type = TokenType::ConstantChar;
+    assert(cchar[0] == '\'');
+    if (cchar[1] == '\00') {
+        assert(false);
+    } else if (cchar[2] == '\'') {
+        this->value = cchar[1];
+    } else {
+        assert(cchar[4] == '\00');
+        assert(cchar[1] == '\'');
+        this->value = char_spec::spec_char_map[cchar[2]];
+    }
 }
+
 
 Identifier::Identifier(const char *identifier) : Token() {
     this->type = TokenType::Identifier;

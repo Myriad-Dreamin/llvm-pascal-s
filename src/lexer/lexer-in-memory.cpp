@@ -28,8 +28,14 @@ void FullInMemoryLexer::reset_cursor() {
 }
 
 const Token *FullInMemoryLexer::next_token() {
-    if (current_token_cursor >= tokens.size() && yylex() == 0) {
-        return nullptr;
+    if (current_token_cursor >= tokens.size()) {
+        auto code = yylex();
+        if (code == 1000) {
+            return next_token();
+        }
+        if (code == 0) {
+            return nullptr;
+        }
     }
     assert(current_token_cursor < tokens.size());
     return tokens[current_token_cursor++];

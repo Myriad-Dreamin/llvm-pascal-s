@@ -16,6 +16,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include <pascal-s/lib/libstdps.h>
 
 #include <pascal-s/ast.h>
 
@@ -40,7 +41,53 @@ struct LLVMBuilder {
     LinkedContext *linked_ctx;
 
     LLVMBuilder() :
-            ir_builder(ctx), modules("llvm-pascal-s", ctx), linked_ctx(nullptr) {}
+            ir_builder(ctx), modules("llvm-pascal-s", ctx), linked_ctx(nullptr) {
+        prepend_lib_standard_pascal_s();
+    }
+
+    void prepend_lib_standard_pascal_s() {
+        auto *prototype = llvm::FunctionType::get(
+                llvm::Type::getInt32Ty(ctx), {
+                        llvm::Type::getInt8PtrTy(ctx),
+                }, false);
+        Function::Create(prototype, Function::ExternalLinkage,
+                         "read_char", modules);
+
+        prototype = llvm::FunctionType::get(
+                llvm::Type::getInt32Ty(ctx), {
+                        llvm::Type::getInt64PtrTy(ctx),
+                }, false);
+        Function::Create(prototype, Function::ExternalLinkage,
+                         "read_int64", modules);
+
+        prototype = llvm::FunctionType::get(
+                llvm::Type::getInt32Ty(ctx), {
+                        llvm::Type::getDoublePtrTy(ctx),
+                }, false);
+        Function::Create(prototype, Function::ExternalLinkage,
+                         "read_real", modules);
+
+        prototype = llvm::FunctionType::get(
+                llvm::Type::getInt32Ty(ctx), {
+                        llvm::Type::getInt8Ty(ctx),
+                }, false);
+        Function::Create(prototype, Function::ExternalLinkage,
+                         "write_char", modules);
+
+        prototype = llvm::FunctionType::get(
+                llvm::Type::getInt32Ty(ctx), {
+                        llvm::Type::getInt64Ty(ctx),
+                }, false);
+        Function::Create(prototype, Function::ExternalLinkage,
+                         "write_int64", modules);
+
+        prototype = llvm::FunctionType::get(
+                llvm::Type::getInt32Ty(ctx), {
+                        llvm::Type::getDoubleTy(ctx),
+                }, false);
+        Function::Create(prototype, Function::ExternalLinkage,
+                         "write_real", modules);
+    }
 
     Function *code_gen_program(ast::Program *pProgram) {
         Function *program = modules.getFunction(pProgram->name->content);
@@ -118,7 +165,36 @@ struct LLVMBuilder {
     }
 
     Value *code_gen_exp_call(ast::ExpCall *pCall) {
-        return nullptr;
+        Function *calleeFunc = modules.getFunction(pCall->fn->content);
+        if (!calleeFunc) {
+            assert(false);
+            return nullptr;
+        }
+        if (calleeFunc->arg_size() != pCall->params->params.size()) {
+            assert(false);
+            return nullptr;
+        }
+        std::vector<Value *> args;
+        for (int i = 0; i < calleeFunc->arg_size(); i++) {
+            auto *argument_proto = calleeFunc->getArg(i);
+            Value *argument_value = nullptr;
+            if (argument_proto->getType()->isPointerTy()) {
+                assert(false);
+            } else {
+                argument_value = code_gen(pCall->params->params[i]);
+                if (argument_value == nullptr) {
+                    assert(false);
+                    return nullptr;
+                }
+                if (argument_proto->getType()->getTypeID() != argument_value->getType()->getTypeID()) {
+                    assert(false);
+                    return nullptr;
+                }
+            }
+            args.push_back(argument_value);
+        }
+
+        return ir_builder.CreateCall(calleeFunc, args, pCall->fn->content);
     }
 
     Value *code_gen_exec_statement(ast::ExecStatement *pStatement) {
@@ -139,8 +215,8 @@ struct LLVMBuilder {
     }
 
     Value *code_gen_exp_constant_char(ast::ExpConstantChar *pChar) {
-
-        return nullptr;
+        return llvm::Constant::getIntegerValue(
+                llvm::Type::getInt8Ty(ctx), llvm::APInt(8, pChar->value->value));
     }
 
     Value *code_gen_binary_exp(ast::BiExp *pExp) {
