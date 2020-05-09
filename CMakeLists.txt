@@ -43,5 +43,8 @@ include_directories(flex/src)
 # include files
 include_directories(include)
 
+# lib files
+add_subdirectory(lib)
+
 # source files
 add_subdirectory(src)

@@ -19,6 +19,7 @@
 
 #include <pascal-s/ast.h>
 
+extern const char *pascal_main_function_name;
 
 // 用于生成目标中间代码LLVM-IR
 struct LLVMBuilder {
@@ -38,14 +39,15 @@ struct LLVMBuilder {
 
     LinkedContext *linked_ctx;
 
-    LLVMBuilder() : ir_builder(ctx), modules("llvm-pascal-s", ctx) {}
+    LLVMBuilder() :
+            ir_builder(ctx), modules("llvm-pascal-s", ctx), linked_ctx(nullptr) {}
 
     Function *code_gen_program(ast::Program *pProgram) {
         Function *program = modules.getFunction(pProgram->name->content);
 
         if (!program) {
             auto *prototype = llvm::FunctionType::get(
-                    llvm::Type::getInt64Ty(ctx), false);
+                    llvm::Type::getInt32Ty(ctx), false);
 
             program = Function::Create(prototype, Function::ExternalLinkage,
                                        pProgram->name->content, modules);
@@ -57,7 +59,7 @@ struct LLVMBuilder {
         std::map<std::string, Value *> program_this;
 
         program_this[pProgram->name->content] = llvm::Constant::getIntegerValue(
-                llvm::Type::getInt32Ty(ctx), llvm::APInt(64, 1));
+                llvm::Type::getInt32Ty(ctx), llvm::APInt(32, 0));
 
         auto link = LinkedContext{nullptr, &program_this};
         linked_ctx = &link;
@@ -66,11 +68,22 @@ struct LLVMBuilder {
 
             llvm::verifyFunction(*program);
             linked_ctx = nullptr;
-            return program;
+            return rename_program_to_pascal_s_native(program);
         }
         program->eraseFromParent();
         linked_ctx = nullptr;
         return nullptr;
+    }
+
+    Function *rename_program_to_pascal_s_native(Function *f) const {
+        Function *maybe_conflict = modules.getFunction(pascal_main_function_name);
+        if (maybe_conflict) {
+            assert(false);
+            return nullptr;
+        }
+
+        f->setName(pascal_main_function_name);
+        return f;
     }
 
     Value *code_gen_procedure(ast::Procedure *pProcedure) {

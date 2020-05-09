@@ -6,6 +6,7 @@
 #define PASCAL_S_INTERFACE_H
 
 #include "token.h"
+#include "ast.h"
 #include <vector>
 
 // reserve lvalue reference semantics
@@ -79,5 +80,14 @@ struct OStreamProxy {
     }
 };
 
+template<typename Parser>
+struct ParserProxy {
+    DefaultProxyConstructor(ParserProxy, Parser, parser)
+
+    // cursor控制peek_token的值
+
+    // 重置cursor
+    [[maybe_unused]] ast::Node *parse() { return parser.parse(); }
+};
 
 #endif //PASCAL_S_INTERFACE_H
