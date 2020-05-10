@@ -1,2 +1,2 @@
-# pascal-s
-pascal-s
+# llvm-pascal-s
+llvm-pascal-s
