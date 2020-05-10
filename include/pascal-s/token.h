@@ -9,6 +9,7 @@
 #include "exception.h"
 #include <stdexcept>
 #include <vector>
+#include <set>
 
 struct LexerInfo {
     int64_t row, column;
@@ -227,17 +228,25 @@ extern const cls cls_lower ##_## lower;
 
     pascal_s_predicator(Keyword, keyword, if, If)
     pascal_s_predicator(Keyword, keyword, then, Then)
+
     pascal_s_predicator(Keyword, keyword, else, Else)
+
     pascal_s_predicator(Keyword, keyword, for, For)
+
     pascal_s_predicator(Keyword, keyword, to, To)
+
     pascal_s_predicator(Keyword, keyword, do, Do)
+
     pascal_s_predicator(Keyword, keyword, of, Of)
 
 #undef pascal_s_predicator
 
 
     bool token_equal(const Token *lhs, const Token *rhs);
-    bool token_equal(const Token *lhs, const std::vector<Token*> *rhs);
+
+    bool token_equal(const Token *lhs, const std::vector<Token *> *rhs);
+
+    bool token_equal(const Token *lhs, const std::set<const Token *> *rhs);
 
 }
 #endif

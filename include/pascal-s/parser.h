@@ -9,6 +9,7 @@
 #include "interface.h"
 #include "ast.h"
 #include "exception.h"
+#include <set>
 
 template<typename Lexer>
 class Parser {
@@ -53,18 +54,18 @@ public:
 
     ast::ArrayTypeSpec *parse_array_type(const Keyword *keyword_array);
 
-    ast::Exp *parse_const_exp(const std::vector<Token *> *till = nullptr);
+    ast::Exp *parse_const_exp(const std::set<const Token *> *till = nullptr);
 
-    ast::Exp *parse_const_fac(const std::vector<Token *> *till = nullptr);
+    ast::Exp *parse_const_fac(const std::set<const Token *> *till = nullptr);
 
-    ast::Exp *parse_exp(const std::vector<Token *> *till = nullptr);
+    ast::Exp *parse_exp(const std::set<const Token *> *till = nullptr);
 
     ast::Exp *parse_binary_exp(ast::Exp *lhs, const Marker *marker, marker_type_underlying_type current_marker_pri,
-                               const std::vector<Token *> *till = nullptr);
+                               const std::set<const Token *> *till = nullptr);
 
     ast::Exp *parse_fac();
 
-    ast::Statement *parse_statement(const std::vector<Token *> *till = nullptr);
+    ast::Statement *parse_statement(std::set<const Token *> *till = nullptr);
 
     const Token *next_token();
 

@@ -306,6 +306,10 @@ namespace ast {
     };
 
     struct IfElseStatement : public Statement {
+        Exp *cond = nullptr;
+        Statement *if_stmt = nullptr;
+        Statement *else_stmt = nullptr;
+
         IfElseStatement() : Statement(Type::IfElseStatement) {}
     };
 

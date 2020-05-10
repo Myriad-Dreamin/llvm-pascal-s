@@ -4,7 +4,8 @@
 
 #include <pascal-s/mock.h>
 #include <pascal-s/parser.h>
-#include <pascal-s/lexer.h>
+#include <fmt/core.h>
+#include <set>
 
 //#ifdef WITH_MOCK
 template
@@ -12,6 +13,7 @@ struct Parser<MockLexer>;
 //#endif
 
 #ifdef WITH_PASCAL_LEXER_FILES
+#include <pascal-s/lexer.h>
 template
 struct Parser<FullInMemoryLexer>;
 #endif
@@ -35,24 +37,47 @@ struct Parser<FullInMemoryLexer>;
 
 namespace predicate {
     struct _parserPredicateContainer {
-        const std::vector<Token *> rParenContainer;
-        const std::vector<Token *> semicolonContainer;
+        const std::set<const Token *> rParenContainer;
+        const std::set<const Token *> semicolonContainer;
+        const std::vector<Token *> thenContainer;
+        const std::vector<Token *> elseContainer;
         const std::vector<Token *> endOrSemicolonContainer;
+        const std::set<const Token *> commaOrRParenContainer;
+        const std::vector<Token *> endOrSemicolonOrElseContainer;
 
 
         explicit _parserPredicateContainer() noexcept:
                 rParenContainer(
                         {
-                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_rparen))
+                                reinterpret_cast<const Token *>(&predicate::marker_rparen)
                         }),
                 semicolonContainer(
                         {
-                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_semicolon))
+                                reinterpret_cast<const Token *>(&predicate::marker_semicolon)
+                        }),
+                thenContainer(
+                        {
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::keyword_then))
+                        }),
+                elseContainer(
+                        {
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::keyword_else))
                         }),
                 endOrSemicolonContainer(
                         {
                                 const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_semicolon)),
                                 const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::keyword_end)),
+                        }),
+                commaOrRParenContainer(
+                        {
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_comma)),
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_rparen)),
+                        }),
+                endOrSemicolonOrElseContainer(
+                        {
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_comma)),
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_rparen)),
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::keyword_else)),
                         }) {
         }
     } predicateContainers;
@@ -111,10 +136,12 @@ ast::Program *Parser<Lexer>::parse_program_struct() {
         fn_decls = parse_function_decls();
     }
 
+    std::set<const Token *> till;
+    till.insert(reinterpret_cast<const Token *>(&predicate::marker_semicolon));
     // program statement
     return new ast::Program(
             program, ident, ident_list,
-            const_decls, var_decls, fn_decls, parse_statement());
+            const_decls, var_decls, fn_decls, parse_statement(&till));
 }
 
 template<typename Lexer>
@@ -218,7 +245,7 @@ ast::ConstDecl *Parser<Lexer>::parse_const_decl() {
 }
 
 template<typename Lexer>
-ast::Exp *Parser<Lexer>::parse_const_exp(const std::vector<Token *> *till) {
+ast::Exp *Parser<Lexer>::parse_const_exp(const std::set<const Token *> *till) {
 
     auto *maybe_lhs = parse_const_fac(till);
     if (maybe_lhs == nullptr) {
@@ -236,7 +263,7 @@ ast::Exp *Parser<Lexer>::parse_const_exp(const std::vector<Token *> *till) {
 }
 
 template<typename Lexer>
-ast::Exp *Parser<Lexer>::parse_const_fac(const std::vector<Token *> *till) {
+ast::Exp *Parser<Lexer>::parse_const_fac(const std::set<const Token *> *till) {
     if (current_token == nullptr) {
         errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "const value", current_token));
         return nullptr;
@@ -622,7 +649,7 @@ ast::ParamSpec *Parser<Lexer>::parse_param() {
 }
 
 template<typename Lexer>
-ast::Statement *Parser<Lexer>::parse_statement(const std::vector<Token *> *till) {
+ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
 
     // begin
     if (predicate::is_begin(current_token)) {
@@ -632,22 +659,38 @@ ast::Statement *Parser<Lexer>::parse_statement(const std::vector<Token *> *till)
         std::vector<ast::Statement *> stmts;
 
         // end
+        ast::Statement *stmt;
         while (!predicate::is_end(current_token)) {
             if (current_token == nullptr) {
                 throw std::invalid_argument("bad ... eof");
             }
 
             // statement
-            auto stmt = parse_statement(&predicate::predicateContainers.endOrSemicolonContainer);
-            if (stmt == nullptr) {
-
-                // is good ?
-                for (auto stmt : stmts) {
-                    ast::deleteAST(stmt);
+            if (till == nullptr) {
+                std::set<const Token *> m_till;
+                m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_end));
+                m_till.insert(reinterpret_cast<const Token *>(&predicate::marker_semicolon));
+                stmt = parse_statement(&m_till);
+            } else {
+                bool no_end = till->count(&predicate::keyword_end), no_semi = till->count(&predicate::marker_semicolon);
+                if (no_end) {
+                    till->insert(&predicate::keyword_end);
                 }
-                return nullptr;
+                if (no_semi) {
+                    till->insert(&predicate::marker_semicolon);
+                }
+                stmt = parse_statement(till);
+                if (no_end) {
+                    till->erase(&predicate::keyword_end);
+                }
+                if (no_semi) {
+                    till->erase(&predicate::marker_semicolon);
+                }
             }
-            stmts.push_back(stmt);
+
+            if (stmt != nullptr) {
+                stmts.push_back(stmt);
+            }
 
             // eat ; if possible
             if (predicate::is_semicolon(current_token)) {
@@ -667,9 +710,8 @@ ast::Statement *Parser<Lexer>::parse_statement(const std::vector<Token *> *till)
     } else if (current_token != nullptr && (current_token->type == TokenType::Identifier)) {
 
         // we extend the prod of statement to reduce work
-        auto exp = parse_exp(
-                till == &predicate::predicateContainers.endOrSemicolonContainer ?
-                till : &predicate::predicateContainers.semicolonContainer);
+        ast::Exp *exp = parse_exp(till);
+
         if (exp == nullptr) {
             return nullptr;
         } else {
@@ -677,15 +719,120 @@ ast::Statement *Parser<Lexer>::parse_statement(const std::vector<Token *> *till)
         }
     } else if (predicate::is_for(current_token)) {
         //todo for
+        errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "statement", current_token));
     } else if (predicate::is_if(current_token)) {
-        //todo if
+        auto *if_else = new ast::IfElseStatement();
+
+        // if
+        expected_enum_type_r(predicate::is_if, predicate::keyword_if, if_else);
+        next_token();
+
+        // if cond
+        if (till == nullptr) {
+            std::set<const Token *> m_till;
+            m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_then));
+            if_else->cond = parse_exp(&m_till);
+        } else {
+            bool no_then = till->count(&predicate::keyword_then);
+            if (no_then) {
+                till->insert(&predicate::keyword_then);
+            }
+            if_else->cond = parse_exp(till);
+            if (no_then) {
+                till->erase(&predicate::keyword_then);
+            }
+        }
+
+        // then
+        expected_enum_type_r(predicate::is_then, predicate::keyword_then, if_else);
+        next_token();
+
+        // if stmt
+        if (till == nullptr) {
+            std::set<const Token *> m_till;
+            m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_else));
+            if_else->if_stmt = parse_statement(&m_till);
+        } else {
+            bool no_else = till->count(&predicate::keyword_else);
+            if (no_else) {
+                till->insert(&predicate::keyword_else);
+            }
+            if_else->if_stmt = parse_statement(till);
+            if (no_else) {
+                till->erase(&predicate::keyword_else);
+            }
+        }
+
+
+        // else part
+        if (predicate::is_else(current_token)) {
+            next_token();
+
+            // else stmt
+            if_else->else_stmt = parse_statement(till);
+        }
     }
-    errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "statement", current_token));
+
+    // epsilon
+    return nullptr;
+}
+
+
+template<typename Lexer>
+ast::VariableList *Parser<Lexer>::parse_variable_list_with_paren() {
+
+    // (
+    expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
+    next_token();
+
+    // variable list
+    auto var_list = parse_variable_list();
+    if (var_list == nullptr) {
+        return nullptr;
+    }
+
+    // )
+    if (!predicate::is_rparen(current_token)) {
+        delete var_list;
+        errors.push_back(new PascalSParseExpectGotError(__FUNCTION__, &predicate::marker_rparen, current_token));
+        return nullptr;
+    }
+    next_token();
+
+    return var_list;
+}
+
+template<typename Lexer>
+ast::VariableList *Parser<Lexer>::parse_variable_list() {
+    auto *ret = new ast::VariableList;
+    for (;;) {
+
+        // look ahead
+        if (predicate::is_rparen(current_token)) {
+            return ret;
+        }
+
+        // extend production
+        ret->params.push_back(parse_exp(&predicate::predicateContainers.commaOrRParenContainer));
+
+        // eat , if possible
+        if (predicate::is_comma(current_token)) {
+            next_token();
+
+            // want FOLLOW(variable) = {)}
+        } else if (!predicate::is_rparen(current_token)) {
+            delete ret;
+            throw std::runtime_error("expected ,/)");
+            return nullptr;
+        }
+    }
     return nullptr;
 }
 
 template<typename Lexer>
-ast::Exp *Parser<Lexer>::parse_exp(const std::vector<Token *> *till) {
+ast::Exp *Parser<Lexer>::parse_exp(const std::set<const Token *> *till) {
+
+    // lhs
     auto maybe_lhs = parse_fac();
     if (predicate::token_equal(current_token, till)) {
         next_token();
@@ -765,18 +912,32 @@ ast::Exp *Parser<Lexer>::parse_fac() {
             default:
                 throw std::runtime_error("expected +/-/(");
         }
+
+        // function call or array index or identifier exp
+        // ident
     } else if (current_token->type == TokenType::Identifier) {
         auto ident = reinterpret_cast<const Identifier *>(current_token);
         next_token();
+
+        // (
         if (current_token != nullptr && current_token->type == TokenType::Marker) {
             auto marker = reinterpret_cast<const Marker *>(current_token);
             if (marker->marker_type == MarkerType::LParen) {
+
+                // will not eat (, just parse ( variable list )
                 return new ast::ExpCall(
                         ident, parse_variable_list_with_paren());
+                // [
+            } else if (marker->marker_type == MarkerType::LBracket) {
+                //todo
+                throw std::runtime_error("todo");
             }
         }
+
+        // otherwise just a identifier exp
         return new ast::Ident(ident);
     } else if (current_token->type == TokenType::Keyword) {
+        //todo
         throw std::runtime_error("todo");
     } else {
         throw std::runtime_error("expected fac");
@@ -786,7 +947,7 @@ ast::Exp *Parser<Lexer>::parse_fac() {
 template<typename Lexer>
 ast::Exp *
 Parser<Lexer>::parse_binary_exp(ast::Exp *lhs, const Marker *marker, marker_type_underlying_type current_marker_pri,
-                                const std::vector<Token *> *till) {
+                                const std::set<const Token *> *till) {
 
     auto rhs = parse_fac();
     if (predicate::token_equal(current_token, till)) {
@@ -804,42 +965,6 @@ Parser<Lexer>::parse_binary_exp(ast::Exp *lhs, const Marker *marker, marker_type
                                 next_marker, pri, till);
     }
     return new ast::BiExp(lhs, marker, parse_binary_exp(rhs, next_marker, pri, till));
-}
-
-
-template<typename Lexer>
-ast::VariableList *Parser<Lexer>::parse_variable_list_with_paren() {
-    expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
-    next_token();
-    auto var_list = parse_variable_list();
-    if (var_list == nullptr) {
-        return nullptr;
-    }
-    if (!predicate::is_rparen(current_token)) {
-        delete var_list;
-        errors.push_back(new PascalSParseExpectGotError(__FUNCTION__, &predicate::marker_rparen, current_token));
-        return nullptr;
-    }
-    next_token();
-    return var_list;
-}
-
-template<typename Lexer>
-ast::VariableList *Parser<Lexer>::parse_variable_list() {
-    auto *ret = new ast::VariableList;
-    for (;;) {
-        if (predicate::is_rparen(current_token)) {
-            return ret;
-        }
-        ret->params.push_back(parse_exp());
-        if (predicate::is_comma(current_token)) {
-            next_token();
-        } else if (!predicate::is_rparen(current_token)) {
-            delete ret;
-            throw std::runtime_error("expected ,/)");
-        }
-    }
-    return nullptr;
 }
 
 

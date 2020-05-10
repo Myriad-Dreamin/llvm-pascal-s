@@ -305,6 +305,19 @@ const Keyword keyword_## lower(KeywordType::upper);
         return false;
     }
 
+    bool token_equal(const Token *lhs, const std::set<const Token *> *rhs) {
+        if (rhs == nullptr) {
+            return lhs == nullptr;
+        }
+
+        for (auto r: *rhs) {
+            if (token_equal(lhs, r)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool token_equal(const Token *lhs, const Token *rhs) {
         if (lhs == nullptr && rhs == nullptr) {
             return true;
@@ -319,6 +332,9 @@ const Keyword keyword_## lower(KeywordType::upper);
             case TokenType::Marker:
                 return reinterpret_cast<const Marker *>(lhs)->marker_type ==
                        reinterpret_cast<const Marker *>(rhs)->marker_type;
+            case TokenType::Keyword:
+                return reinterpret_cast<const Keyword *>(lhs)->key_type ==
+                       reinterpret_cast<const Keyword *>(rhs)->key_type;
             default:
                 throw std::runtime_error("todo token equal");
         }
