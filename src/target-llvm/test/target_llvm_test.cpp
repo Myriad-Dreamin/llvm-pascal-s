@@ -15,6 +15,11 @@ struct GenerateLLVMIRTestCase {
 
 class GoodGenerateLLVMIRTest : public testing::TestWithParam<GenerateLLVMIRTestCase> {
 
+    void SetUp() override {
+
+    };
+
+
     void TearDown() override {
 
     };
@@ -48,33 +53,35 @@ TEST_P(GoodGenerateLLVMIRTest, WillNotThrowException) /* NOLINT */
 }
 
 INSTANTIATE_TEST_SUITE_P(Simple, GoodGenerateLLVMIRTest, testing::Values( /* NOLINT */
-//        GenerateLLVMIRTestCase{"program main; main := 0;"},
+//        GenerateLLVMIRTestCase{"program main; main := 0;"}
+//        ,
 //        GenerateLLVMIRTestCase{
 //            "program main; begin "
 //            "    main := 1 + 1; "
-//            "end"}
-//            GenerateLLVMIRTestCase{"program main;\n"
-////                                   "  var a: integer;\n"
-//                                   "  begin\n"
-////                                   "    read_int64(a);\n"
-//                                   "    write_int64(1);\n"
-//                                   "    main := 0;\n"
-//                                   "  end"}
+//            "end"},
         GenerateLLVMIRTestCase{"program main;\n"
-                               " begin\n"
-                               "   write_char('h');\n"
-                               //               "   write_char('e');\n"
-                               //               "   write_char('l');\n"
-                               //               "   write_char('l');\n"
-                               //               "   write_char('o');\n"
-                               //               "   write_char(' ');\n"
-                               //               "   write_char('w');\n"
-                               //               "   write_char('o');\n"
-                               //               "   write_char('r');\n"
-                               //               "   write_char('l');\n"
-                               //               "   write_char('d');\n"
-                               "   main := 0;\n"
-                               " end"}
+                               "  var a: integer;\n"
+                               "  begin\n"
+                               "    read_int64(a);\n"
+                               "    write_int64(a);\n"
+                               "    main := 0;\n"
+                               "  end"}
+//                                   ,
+//        GenerateLLVMIRTestCase{"program main;\n"
+//                               " begin\n"
+//                               "   write_char('h');\n"
+//                               //               "   write_char('e');\n"
+//                               //               "   write_char('l');\n"
+//                               //               "   write_char('l');\n"
+//                               //               "   write_char('o');\n"
+//                               //               "   write_char(' ');\n"
+//                               //               "   write_char('w');\n"
+//                               //               "   write_char('o');\n"
+//                               //               "   write_char('r');\n"
+//                               //               "   write_char('l');\n"
+//                               //               "   write_char('d');\n"
+//                               "   main := 0;\n"
+//                               " end"}
 ));
 
 

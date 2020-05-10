@@ -7,10 +7,10 @@
 #include <fmt/core.h>
 #include <set>
 
-//#ifdef WITH_MOCK
+#ifdef WITH_MOCK
 template
 struct Parser<MockLexer>;
-//#endif
+#endif
 
 #ifdef WITH_PASCAL_LEXER_FILES
 #include <pascal-s/lexer.h>
@@ -671,7 +671,8 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
                 m_till.insert(reinterpret_cast<const Token *>(&predicate::marker_semicolon));
                 stmt = parse_statement(&m_till);
             } else {
-                bool no_end = till->count(&predicate::keyword_end), no_semi = till->count(&predicate::marker_semicolon);
+                bool no_end = !till->count(&predicate::keyword_end), no_semi = !till->count(
+                        &predicate::marker_semicolon);
                 if (no_end) {
                     till->insert(&predicate::keyword_end);
                 }
@@ -738,7 +739,7 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
             m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_to));
             for_stmt->from_exp = parse_exp(&m_till);
         } else {
-            bool no_to = till->count(&predicate::keyword_to);
+            bool no_to = !till->count(&predicate::keyword_to);
             if (no_to) {
                 till->insert(&predicate::keyword_to);
             }
@@ -758,7 +759,7 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
             m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_do));
             for_stmt->to_exp = parse_exp(&m_till);
         } else {
-            bool no_do = till->count(&predicate::keyword_do);
+            bool no_do = !till->count(&predicate::keyword_do);
             if (no_do) {
                 till->insert(&predicate::keyword_do);
             }
@@ -791,7 +792,7 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
             m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_then));
             if_else->cond = parse_exp(&m_till);
         } else {
-            bool no_then = till->count(&predicate::keyword_then);
+            bool no_then = !till->count(&predicate::keyword_then);
             if (no_then) {
                 till->insert(&predicate::keyword_then);
             }
@@ -811,7 +812,7 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
             m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_else));
             if_else->if_stmt = parse_statement(&m_till);
         } else {
-            bool no_else = till->count(&predicate::keyword_else);
+            bool no_else = !till->count(&predicate::keyword_else);
             if (no_else) {
                 till->insert(&predicate::keyword_else);
             }
