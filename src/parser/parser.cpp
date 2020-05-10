@@ -718,8 +718,60 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
             return new ast::ExecStatement(exp);
         }
     } else if (predicate::is_for(current_token)) {
-        //todo for
-        errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "statement", current_token));
+        auto *for_stmt = new ast::ForStatement();
+
+        // for
+        expected_enum_type_r(predicate::is_for, predicate::keyword_for, for_stmt);
+        next_token();
+
+        // id
+        expected_type_r(TokenType::Identifier, for_stmt);
+        for_stmt->loop_var = reinterpret_cast<const Identifier *>(current_token);
+        next_token();
+
+        // :=
+        expected_enum_type_r(predicate::is_assgin, predicate::marker_assgin, for_stmt);
+        next_token();
+        if (till == nullptr) {
+            std::set<const Token *> m_till;
+            m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_to));
+            for_stmt->from_exp = parse_exp(&m_till);
+        } else {
+            bool no_to = till->count(&predicate::keyword_to);
+            if (no_to) {
+                till->insert(&predicate::keyword_to);
+            }
+            for_stmt->from_exp = parse_exp(till);
+            if (no_to) {
+                till->erase(&predicate::keyword_to);
+            }
+        }
+
+        // to
+        expected_enum_type_r(predicate::is_to, predicate::keyword_to, for_stmt);
+        next_token();
+        if (till == nullptr) {
+            std::set<const Token *> m_till;
+            m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_do));
+            for_stmt->to_exp = parse_exp(&m_till);
+        } else {
+            bool no_do = till->count(&predicate::keyword_do);
+            if (no_do) {
+                till->insert(&predicate::keyword_do);
+            }
+            for_stmt->to_exp = parse_exp(till);
+            if (no_do) {
+                till->erase(&predicate::keyword_do);
+            }
+        }
+
+        // do
+        expected_enum_type_r(predicate::is_do, predicate::keyword_do, for_stmt);
+        next_token();
+        for_stmt->for_stmt = parse_statement(till);
+
+
+        return for_stmt;
     } else if (predicate::is_if(current_token)) {
         auto *if_else = new ast::IfElseStatement();
 
@@ -763,7 +815,6 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
             }
         }
 
-
         // else part
         if (predicate::is_else(current_token)) {
             next_token();
@@ -771,6 +822,8 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
             // else stmt
             if_else->else_stmt = parse_statement(till);
         }
+
+        return if_else;
     }
 
     // epsilon

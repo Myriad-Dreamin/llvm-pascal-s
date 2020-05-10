@@ -311,10 +311,27 @@ namespace ast {
         Statement *else_stmt = nullptr;
 
         IfElseStatement() : Statement(Type::IfElseStatement) {}
+
+        ~IfElseStatement() {
+            delete cond;
+            delete if_stmt;
+            delete else_stmt;
+        }
     };
 
     struct ForStatement : public Statement {
+        const Identifier *loop_var = nullptr;
+        Exp *from_exp = nullptr;
+        Exp *to_exp = nullptr;
+        Statement *for_stmt = nullptr;
+
         ForStatement() : Statement(Type::ForStatement) {}
+
+        ~ForStatement() {
+            delete from_exp;
+            delete to_exp;
+            delete for_stmt;
+        }
     };
 
     struct ExpConstantInteger : public Exp {
