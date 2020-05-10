@@ -210,6 +210,9 @@ TEST_P(ParserExpTest, WillNotThrowException) /* NOLINT */
     parser.next_token();
     auto ast = parser.parse_exp();
     ASSERT_NE(ast, nullptr);
+    auto x = lexer.current_token_cursor;
+    parser.next_token();
+    ASSERT_EQ(x, lexer.current_token_cursor);
 
     deleteAST(ast);
 //        auto tok = lexer.next_token();
