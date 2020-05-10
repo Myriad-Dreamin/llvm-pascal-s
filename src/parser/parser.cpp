@@ -6,10 +6,15 @@
 #include <pascal-s/parser.h>
 #include <pascal-s/lexer.h>
 
+//#ifdef WITH_MOCK
 template
 struct Parser<MockLexer>;
+//#endif
+
+#ifdef WITH_PASCAL_LEXER_FILES
 template
 struct Parser<FullInMemoryLexer>;
+#endif
 
 #define expected_enum_type(predicator, indicate) do {if (!predicator(current_token)) {\
     errors.push_back(new PascalSParseExpectGotError(__FUNCTION__, &indicate, current_token));\
@@ -27,6 +32,31 @@ struct Parser<FullInMemoryLexer>;
 }}while(0)
 
 #define expected_type(tok_type) expected_type_r(tok_type, nullptr)
+
+namespace predicate {
+    struct _parserPredicateContainer {
+        const std::vector<Token *> rParenContainer;
+        const std::vector<Token *> semicolonContainer;
+        const std::vector<Token *> endOrSemicolonContainer;
+
+
+        explicit _parserPredicateContainer() noexcept:
+                rParenContainer(
+                        {
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_rparen))
+                        }),
+                semicolonContainer(
+                        {
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_semicolon))
+                        }),
+                endOrSemicolonContainer(
+                        {
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_semicolon)),
+                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::keyword_end)),
+                        }) {
+        }
+    } predicateContainers;
+}
 
 template<typename Lexer>
 Parser<Lexer>::Parser(LexerProxy<Lexer> lexer) : lexer(std::move(lexer)) {}
@@ -178,7 +208,7 @@ ast::ConstDecl *Parser<Lexer>::parse_const_decl() {
     next_token();
 
     // const exp
-    auto decl = new ast::ConstDecl(ident, parse_const_exp());
+    auto decl = new ast::ConstDecl(ident, parse_const_exp(&predicate::predicateContainers.semicolonContainer));
 
     // ;
     expected_enum_type(predicate::is_semicolon, predicate::marker_semicolon);
@@ -190,14 +220,14 @@ ast::ConstDecl *Parser<Lexer>::parse_const_decl() {
 template<typename Lexer>
 ast::Exp *Parser<Lexer>::parse_const_exp(const std::vector<Token *> *till) {
 
-    auto *fac = parse_const_fac();
-    if (fac == nullptr) {
+    auto *maybe_lhs = parse_const_fac(till);
+    if (maybe_lhs == nullptr) {
         return nullptr;
     }
 
     if (predicate::token_equal(current_token, till)) {
         next_token();
-        return fac;
+        return maybe_lhs;
     }
 
     assert(false);
@@ -206,7 +236,7 @@ ast::Exp *Parser<Lexer>::parse_const_exp(const std::vector<Token *> *till) {
 }
 
 template<typename Lexer>
-ast::Exp *Parser<Lexer>::parse_const_fac() {
+ast::Exp *Parser<Lexer>::parse_const_fac(const std::vector<Token *> *till) {
     if (current_token == nullptr) {
         errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "const value", current_token));
         return nullptr;
@@ -218,7 +248,7 @@ ast::Exp *Parser<Lexer>::parse_const_fac() {
             case MarkerType::Add:
             case MarkerType::Sub:
                 next_token();
-                return new ast::UnExp(marker, parse_const_exp());
+                return new ast::UnExp(marker, parse_const_exp(till));
             case MarkerType::LParen:
                 next_token();
                 return parse_const_exp(&predicate::predicateContainers.rParenContainer);
@@ -228,34 +258,34 @@ ast::Exp *Parser<Lexer>::parse_const_fac() {
     }
 
     // parse const fac
-    ast::Exp *maybe_lhs = nullptr;
+    ast::Exp *fac = nullptr;
     if (current_token->type == TokenType::ConstantInteger) {
-        maybe_lhs = new ast::ExpConstantInteger(
+        fac = new ast::ExpConstantInteger(
                 reinterpret_cast<const ConstantInteger *>(current_token));
     }
     if (current_token->type == TokenType::ConstantChar) {
-        maybe_lhs = new ast::ExpConstantChar(
+        fac = new ast::ExpConstantChar(
                 reinterpret_cast<const ConstantChar *>(current_token));
     }
     if (current_token->type == TokenType::ConstantString) {
-        maybe_lhs = new ast::ExpConstantString(
+        fac = new ast::ExpConstantString(
                 reinterpret_cast<const ConstantString *>(current_token));
     }
     if (current_token->type == TokenType::ConstantReal) {
-        maybe_lhs = new ast::ExpConstantReal(
+        fac = new ast::ExpConstantReal(
                 reinterpret_cast<const ConstantReal *>(current_token));
     }
     if (current_token->type == TokenType::ConstantBoolean) {
-        maybe_lhs = new ast::ExpConstantBoolean(
+        fac = new ast::ExpConstantBoolean(
                 reinterpret_cast<const ConstantBoolean *>(current_token));
     }
-    if (maybe_lhs == nullptr) {
+    if (fac == nullptr) {
         return nullptr;
     }
 
     next_token();
 
-    return exp;
+    return fac;
 }
 
 template<typename Lexer>
@@ -382,7 +412,7 @@ ast::ArrayTypeSpec *Parser<Lexer>::parse_array_type(const Keyword *keyword_array
             basic->key_type == KeywordType::Boolean
             ) {
         next_token();
-        return new ast::ArrayTypeSpec(peroids, basic);
+        return new ast::ArrayTypeSpec(periods, basic);
     }
 
     errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", basic));
@@ -492,63 +522,154 @@ ast::Procedure *Parser<Lexer>::parse_function_body(ast::Procedure *proc) {
         proc->var_decls = parse_var_decls();
     }
 
-
+    // statement
     proc->body = parse_statement();
     return proc;
 }
 
 template<typename Lexer>
 ast::ParamList *Parser<Lexer>::parse_param_list_with_paren() {
+
+    // (
     expected_enum_type(predicate::is_lparen, predicate::marker_lparen);
     next_token();
+
+    // param list
     auto param_list = parse_param_list();
     if (param_list == nullptr) {
         return nullptr;
     }
+
+    // )
     if (!predicate::is_rparen(current_token)) {
         delete param_list;
         errors.push_back(new PascalSParseExpectGotError(__FUNCTION__, &predicate::marker_rparen, current_token));
         return nullptr;
     }
     next_token();
+
     return param_list;
 }
 
 template<typename Lexer>
 ast::ParamList *Parser<Lexer>::parse_param_list() {
-    //todo: param list
-    return nullptr;
+    //look ahead
+    if (current_token == nullptr || current_token->type != TokenType::Identifier) {
+        return nullptr;
+    }
+    return _parse_param_list(new ast::ParamList);
+}
+
+
+template<typename Lexer>
+ast::ParamList *Parser<Lexer>::_parse_param_list(ast::ParamList *params) {
+    auto spec = parse_param();
+    if (spec == nullptr) {
+        return params;
+    }
+    params->params.push_back(spec);
+
+    //look ahead
+    if (current_token == nullptr || current_token->type != TokenType::Identifier) {
+
+        // param list
+        _parse_param_list(params);
+    }
+    return params;
 }
 
 template<typename Lexer>
-ast::Statement *Parser<Lexer>::parse_statement() {
+ast::ParamSpec *Parser<Lexer>::parse_param() {
+    auto keyword_var = reinterpret_cast<const Keyword *>(current_token);
+    if (current_token == nullptr ||
+        keyword_var->type != TokenType::Keyword ||
+        keyword_var->key_type != KeywordType::Var) {
+
+        keyword_var = nullptr;
+    }
+
+    // id list
+    auto id_list = parse_id_list();
+    if (id_list == nullptr) {
+        return nullptr;
+    }
+
+    // :
+    expected_enum_type(predicate::is_colon, predicate::marker_colon);
+    next_token();
+
+    auto basic = reinterpret_cast<const Keyword *>(current_token);
+    if (basic == nullptr || basic->type != TokenType::Keyword) {
+        return nullptr;
+    }
+    if (
+        // basic type
+            basic->key_type != KeywordType::Integer &&
+            basic->key_type != KeywordType::Real &&
+            basic->key_type != KeywordType::Char &&
+            basic->key_type != KeywordType::Boolean
+            ) {
+        errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", basic));
+        return nullptr;
+    }
+    next_token();
+
+    // ;
+    expected_enum_type(predicate::is_semicolon, predicate::marker_semicolon);
+    next_token();
+
+    return new ast::ParamSpec(keyword_var, id_list, new ast::BasicTypeSpec(basic));
+}
+
+template<typename Lexer>
+ast::Statement *Parser<Lexer>::parse_statement(const std::vector<Token *> *till) {
+
+    // begin
     if (predicate::is_begin(current_token)) {
         auto begin_tok = reinterpret_cast<const Keyword *>(current_token);
         next_token();
+
         std::vector<ast::Statement *> stmts;
+
+        // end
         while (!predicate::is_end(current_token)) {
             if (current_token == nullptr) {
                 throw std::invalid_argument("bad ... eof");
             }
-            auto stmt = parse_statement();
+
+            // statement
+            auto stmt = parse_statement(&predicate::predicateContainers.endOrSemicolonContainer);
             if (stmt == nullptr) {
+
+                // is good ?
                 for (auto stmt : stmts) {
                     ast::deleteAST(stmt);
                 }
                 return nullptr;
             }
             stmts.push_back(stmt);
+
+            // eat ; if possible
             if (predicate::is_semicolon(current_token)) {
                 next_token();
             }
         }
+
+        // end
         auto end_tok = reinterpret_cast<const Keyword *>(current_token);
         next_token();
+
         auto block = new ast::StatementBlock(begin_tok, end_tok);
         block->stmts.swap(stmts);
         return block;
+
+        // assign op or func call
     } else if (current_token != nullptr && (current_token->type == TokenType::Identifier)) {
-        auto exp = parse_exp(&predicate::predicateContainers.semicolonContainer);
+
+        // we extend the prod of statement to reduce work
+        auto exp = parse_exp(
+                till == &predicate::predicateContainers.endOrSemicolonContainer ?
+                till : &predicate::predicateContainers.semicolonContainer);
         if (exp == nullptr) {
             return nullptr;
         } else {
@@ -598,25 +719,6 @@ ast::Exp *Parser<Lexer>::parse_exp(const std::vector<Token *> *till) {
         );
     }
 
-}
-
-namespace predicate {
-    struct _parserPredicateContainer {
-        const std::vector<Token *> rParenContainer;
-        const std::vector<Token *> semicolonContainer;
-
-
-        explicit _parserPredicateContainer() noexcept:
-                rParenContainer(
-                        {
-                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_rparen))
-                        }),
-                semicolonContainer(
-                        {
-                                const_cast<Token *>(reinterpret_cast<const Token *>(&predicate::marker_semicolon))
-                        }) {
-        }
-    } predicateContainers;
 }
 
 template<typename Lexer>

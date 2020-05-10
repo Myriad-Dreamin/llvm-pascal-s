@@ -27,6 +27,7 @@ namespace ast {
         ExpConstantReal,
         Ident,
         ParamList,
+        ParamSpec,
         VariableList,
         IdentList,
         ConstDecl,
@@ -81,8 +82,25 @@ namespace ast {
                                           keyword(keyword) {}
     };
 
+    struct IdentList : public Node {
+        std::vector<const Identifier *> idents;
+
+        IdentList() : Node(Type::IdentList) {}
+    };
+
+    struct ParamSpec : public Node {
+        const Keyword *keyword_var;
+        IdentList *id_list;
+        TypeSpec *spec;
+
+        ParamSpec(const Keyword *keyword_var, IdentList *id_list, TypeSpec *spec) : Node(Type::ParamSpec),
+                                                                                    keyword_var(keyword_var),
+                                                                                    id_list(id_list), spec(spec) {}
+
+    };
+
     struct ParamList : public Node {
-        std::vector<Exp *> params;
+        std::vector<ParamSpec *> params;
 
         ParamList() : Node(Type::ParamList) {}
 
@@ -103,12 +121,6 @@ namespace ast {
                 deleteAST(exp);
             }
         }
-    };
-
-    struct IdentList : public Node {
-        std::vector<const Identifier *> idents;
-
-        IdentList() : Node(Type::IdentList) {}
     };
 
     struct ConstDecl : public Node {
@@ -274,7 +286,7 @@ namespace ast {
         std::vector<Statement *> stmts;
 
         StatementBlock(const Keyword *key_begin, const Keyword *key_end) : Statement(Type::StatementBlock),
-                                                                   key_begin(key_begin), key_end(key_end) {}
+                                                                           key_begin(key_begin), key_end(key_end) {}
 
         ~StatementBlock() {
             for (auto stmt: stmts) {
@@ -285,7 +297,9 @@ namespace ast {
 
     struct ExecStatement : public Statement {
         Exp *exp;
+
         explicit ExecStatement(Exp *exp) : Statement(Type::ExecStatement), exp(exp) {}
+
         ~ExecStatement() {
             deleteAST(exp);
         }

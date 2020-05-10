@@ -30,6 +30,9 @@ public:
 
     ast::IdentList *parse_id_list();
     ast::ParamList *parse_param_list();
+
+    ast::ParamSpec *parse_param();
+
     ast::VariableList *parse_variable_list();
 
     ast::ConstDecls *parse_const_decls();
@@ -52,7 +55,7 @@ public:
 
     ast::Exp *parse_const_exp(const std::vector<Token *> *till = nullptr);
 
-    ast::Exp *parse_const_fac();
+    ast::Exp *parse_const_fac(const std::vector<Token *> *till = nullptr);
 
     ast::Exp *parse_exp(const std::vector<Token *> *till = nullptr);
 
@@ -61,12 +64,14 @@ public:
 
     ast::Exp *parse_fac();
 
-    ast::Statement *parse_statement();
+    ast::Statement *parse_statement(const std::vector<Token *> *till = nullptr);
 
     const Token *next_token();
 
 private:
     ast::IdentList *_parse_id_list(ast::IdentList *);
+
+    ast::ParamList *_parse_param_list(ast::ParamList *params);
 
     ast::ConstDecls *_parse_const_decls(ast::ConstDecls *);
     ast::VarDecls *_parse_var_decls(ast::VarDecls *);
