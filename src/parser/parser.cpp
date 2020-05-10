@@ -732,6 +732,8 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
         // :=
         expected_enum_type_r(predicate::is_assgin, predicate::marker_assgin, for_stmt);
         next_token();
+
+        // from exp
         if (till == nullptr) {
             std::set<const Token *> m_till;
             m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_to));
@@ -750,6 +752,8 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
         // to
         expected_enum_type_r(predicate::is_to, predicate::keyword_to, for_stmt);
         next_token();
+
+        // to exp
         if (till == nullptr) {
             std::set<const Token *> m_till;
             m_till.insert(reinterpret_cast<const Token *>(&predicate::keyword_do));
@@ -768,6 +772,9 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
         // do
         expected_enum_type_r(predicate::is_do, predicate::keyword_do, for_stmt);
         next_token();
+
+
+        // for statement body
         for_stmt->for_stmt = parse_statement(till);
 
 
