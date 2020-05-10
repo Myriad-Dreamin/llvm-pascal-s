@@ -16,6 +16,10 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
 
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Utils.h"
+
 const char *pascal_main_function_name = "pascal_s_main_520d4d14";
 
 #define LLVM_X86_64_CPU "x86_64"
@@ -23,6 +27,13 @@ const char *pascal_main_function_name = "pascal_s_main_520d4d14";
 [[maybe_unused]] int target_compile(int, const char **, CompilerTargetTask *task) {
 
     auto builder = LLVMBuilder();
+
+//    llvm::legacy::FunctionPassManager fPassM(&builder.modules);
+//    fPassM.add(llvm::createPromoteMemoryToRegisterPass());
+//    fPassM.add(llvm::createInstructionCombiningPass());
+//    fPassM.add(llvm::createReassociatePass());
+//    fPassM.doInitialization();
+
     auto value = builder.code_gen(task->source);
     std::string buf;
     llvm::raw_string_ostream os(buf);

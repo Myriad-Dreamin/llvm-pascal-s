@@ -94,13 +94,13 @@ struct LLVMBuilder {
     void insert_var_decls(Function *cur_func, std::map<std::string, llvm::AllocaInst *> &map, ast::VarDecls *pDecls) {
 
         if (pDecls != nullptr) {
-            llvm::IRBuilder<> TmpB(&cur_func->getEntryBlock(),
-                                   cur_func->getEntryBlock().begin());
+            llvm::IRBuilder<> dfn_block(&cur_func->getEntryBlock(),
+                                        cur_func->getEntryBlock().begin());
 
             for (auto decl : pDecls->decls) {
                 llvm::Type *value = create_type(decl->type_spec);
                 for (auto ident : decl->idents->idents) {
-                    map[ident->content] = TmpB.CreateAlloca(value, nullptr, ident->content);
+                    map[ident->content] = dfn_block.CreateAlloca(value, nullptr, ident->content);
                 }
             }
         }
@@ -163,25 +163,24 @@ struct LLVMBuilder {
         std::map<std::string, Value *> program_const_this;
         insert_const_decls(program_const_this, pProgram->const_decls);
 
-        llvm::IRBuilder<> TmpB(&program->getEntryBlock(),
-                               program->getEntryBlock().begin());
-//llvm::Constant::getIntegerValue(
-//                llvm::Type::getInt32Ty(ctx), llvm::APInt(32, 0))
-        program_this[pProgram->name->content] = TmpB.CreateAlloca(llvm::Type::getInt32Ty(
+        auto link = LinkedContext{linked_ctx, &program_this, &program_const_this};
+        linked_ctx = &link;
+
+        llvm::IRBuilder<> dfn_block(&program->getEntryBlock(),
+                                    program->getEntryBlock().begin());
+        program_this[pProgram->name->content] = dfn_block.CreateAlloca(llvm::Type::getInt32Ty(
                 ctx), nullptr, pProgram->name->content);
 
-        auto link = LinkedContext{nullptr, &program_this, &program_const_this};
-        linked_ctx = &link;
         if (code_gen_statement(pProgram->body)) {
             ir_builder.CreateRet(
                     ir_builder.CreateLoad(program_this[pProgram->name->content], "ret_tmp"));
 
             llvm::verifyFunction(*program);
-            linked_ctx = nullptr;
+            linked_ctx = link.last;
             return rename_program_to_pascal_s_native(program);
         }
         program->eraseFromParent();
-        linked_ctx = nullptr;
+        linked_ctx = link.last;
         return nullptr;
     }
 
@@ -196,7 +195,78 @@ struct LLVMBuilder {
         return f;
     }
 
-    Value *code_gen_procedure(const ast::Procedure *pProcedure) {
+    Function *code_gen_procedure(const ast::Procedure *pProcedure) {
+        Function *fn = modules.getFunction(pProcedure->name->content);
+
+        if (!fn) {
+            llvm::Type *llvm_ret_type = nullptr;
+            if (pProcedure->return_type == nullptr) {
+                llvm_ret_type = llvm::Type::getVoidTy(ctx);
+            } else {
+                llvm_ret_type = create_type(pProcedure->return_type);
+            }
+
+            int args_proto_size = 0;
+
+            for (auto arg_spec : pProcedure->params->params) {
+                args_proto_size += arg_spec->id_list->idents.size();
+            }
+
+            std::vector<llvm::Type *> args_proto;
+            args_proto.reserve(args_proto_size);
+
+            for (auto arg_spec : pProcedure->params->params) {
+                llvm::Type *llvm_arg_type = create_type(arg_spec->spec);
+
+                if (arg_spec->keyword_var != nullptr) {
+                    llvm_arg_type = llvm_arg_type->getPointerTo();
+                }
+
+                for (auto ident: arg_spec->id_list->idents) {
+                    for (int xx = 0; xx < arg_spec->id_list->idents.size(); xx++)
+                        args_proto.push_back(llvm_arg_type);
+                }
+            }
+
+            auto *prototype = llvm::FunctionType::get(
+                    llvm_ret_type, args_proto, false);
+
+            fn = Function::Create(prototype, Function::ExternalLinkage,
+                                  pProcedure->name->content, modules);
+
+            int arg_cursor = 0;
+            for (auto arg_spec : pProcedure->params->params) {
+                for (auto ident: arg_spec->id_list->idents) {
+                    fn->getArg(arg_cursor++)->setName(ident->content);
+                }
+            }
+        }
+
+        llvm::BasicBlock *body = llvm::BasicBlock::Create(ctx, "entry", fn);
+        ir_builder.SetInsertPoint(body);
+
+        std::map<std::string, llvm::AllocaInst *> program_this;
+        insert_var_decls(fn, program_this, pProcedure->var_decls);
+        std::map<std::string, Value *> program_const_this;
+        insert_const_decls(program_const_this, pProcedure->const_decls);
+
+        auto link = LinkedContext{linked_ctx, &program_this, &program_const_this};
+        linked_ctx = &link;
+
+        llvm::IRBuilder<> dfn_block(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+        program_this[pProcedure->name->content] = dfn_block.CreateAlloca(
+                fn->getReturnType(), nullptr, pProcedure->name->content);
+
+        if (code_gen_statement(pProcedure->body)) {
+            ir_builder.CreateRet(
+                    ir_builder.CreateLoad(program_this[pProcedure->name->content], "ret_tmp"));
+
+            llvm::verifyFunction(*fn);
+            linked_ctx = link.last;
+            return fn;
+        }
+        fn->eraseFromParent();
+        linked_ctx = link.last;
         return nullptr;
     }
 
@@ -264,12 +334,174 @@ struct LLVMBuilder {
         return code_gen(pStatement->exp);
     }
 
-    Value *code_gen_if_else_statement(const ast::IfElseStatement *pStatement) {
-        return nullptr;
+    Value *code_gen_if_else_statement(const ast::IfElseStatement *if_else_stmt) {
+
+        Value *cond = code_gen(if_else_stmt->cond);
+        if (!cond) {
+            return nullptr;
+        }
+
+        switch (cond->getType()->getTypeID()) {
+            case llvm::Type::TypeID::IntegerTyID:
+                cond = ir_builder.CreateICmpNE(
+                        cond, llvm::Constant::getIntegerValue(
+                                cond->getType(), llvm::APInt(cond->getType()->getIntegerBitWidth(), 0)), "if_cond");
+                break;
+            case llvm::Type::TypeID::DoubleTyID:
+                cond = ir_builder.CreateFCmpONE(
+                        cond, llvm::ConstantFP::get(cond->getType(), llvm::APFloat(double(0))), "if_cond");
+                break;
+            default:
+                assert(false);
+                return nullptr;
+        }
+
+
+        Function *cur_function = ir_builder.GetInsertBlock()->getParent();
+        llvm::BasicBlock *then_block = llvm::BasicBlock::Create(ctx, "then", cur_function);
+        llvm::BasicBlock *else_block = llvm::BasicBlock::Create(ctx, "else");
+        llvm::BasicBlock *merge_block = llvm::BasicBlock::Create(ctx, "follow_ie");
+
+        // link before if to -> cond ? then_block : else_block
+        ir_builder.CreateCondBr(cond, then_block, else_block);
+
+        // already pushed then block
+        // build then block
+        ir_builder.SetInsertPoint(then_block);
+        Value *then_value = code_gen_statement(if_else_stmt->if_stmt);
+        if (!then_value)
+            return nullptr;
+        ir_builder.CreateBr(merge_block);
+        then_block = ir_builder.GetInsertBlock();
+
+        // push else block
+        cur_function->getBasicBlockList().push_back(else_block);
+        // build else block
+        ir_builder.SetInsertPoint(else_block);
+        Value *else_value = code_gen_statement(if_else_stmt->else_stmt);
+        if (!else_value)
+            return nullptr;
+        ir_builder.CreateBr(merge_block);
+        else_block = ir_builder.GetInsertBlock();
+
+        // push merge block
+        cur_function->getBasicBlockList().push_back(merge_block);
+        ir_builder.SetInsertPoint(merge_block);
+
+        if (then_value->getType()->getTypeID() == else_value->getType()->getTypeID()) {
+            //assuming equal
+
+            llvm::PHINode *merged_value = ir_builder.CreatePHI(
+                    then_value->getType(), 2, "ieb_eval");
+
+            merged_value->addIncoming(then_value, then_block);
+            merged_value->addIncoming(else_value, else_block);
+            return merged_value;
+        }
+
+        return else_value;
     }
 
-    Value *code_gen_for_statement(const ast::ForStatement *pStatement) {
-        return nullptr;
+    Value *code_gen_for_statement(const ast::ForStatement *for_stmt) {
+        Function *cur_function = ir_builder.GetInsertBlock()->getParent();
+
+        llvm::IRBuilder<> dfn_block(&cur_function->getEntryBlock(),
+                                    cur_function->getEntryBlock().begin());
+
+        Value *from_value = code_gen(for_stmt->from_exp);
+        Value *to_value = code_gen(for_stmt->to_exp);
+
+        if (from_value->getType()->getTypeID() != to_value->getType()->getTypeID()) {
+            assert(false);
+            return nullptr;
+        }
+
+        llvm::AllocaInst *loop_var = dfn_block.CreateAlloca(from_value->getType(), nullptr,
+                                                            for_stmt->loop_var->content);
+        Value *step_value = nullptr;
+        switch (from_value->getType()->getTypeID()) {
+            case llvm::Type::IntegerTyID:
+                step_value = llvm::Constant::getIntegerValue(
+                        from_value->getType(), llvm::APInt(from_value->getType()->getIntegerBitWidth(), 1));
+                break;
+            default:
+                assert(false);
+                // todo
+                return nullptr;
+        }
+
+        llvm::AllocaInst *old_var = nullptr;
+        if (linked_ctx->ctx->count(for_stmt->loop_var->content)) {
+            old_var = linked_ctx->ctx->at(for_stmt->loop_var->content);
+        }
+        (*linked_ctx->ctx)[for_stmt->loop_var->content] = loop_var;
+
+        ir_builder.CreateStore(from_value, loop_var);
+
+
+        llvm::BasicBlock *loop_block = llvm::BasicBlock::Create(ctx, "loop", cur_function);
+        llvm::BasicBlock *loop_after_block =
+                llvm::BasicBlock::Create(ctx, "follow_lp");
+
+        Value *first_loop_cond = nullptr;
+        switch (from_value->getType()->getTypeID()) {
+            case llvm::Type::IntegerTyID:
+                //todo unsigned
+                first_loop_cond = ir_builder.CreateICmpSLE(
+                        from_value, to_value, "loop_cond");
+                break;
+            default:
+                assert(false);
+                // todo
+                return nullptr;
+        }
+
+        ir_builder.CreateCondBr(first_loop_cond, loop_block, loop_after_block);
+        ir_builder.SetInsertPoint(loop_block);
+
+        Value *loop_body = code_gen_statement(for_stmt->for_stmt);
+        if (loop_body == nullptr)
+            return nullptr;
+
+
+        Value *cur_value = ir_builder.CreateLoad(loop_var, for_stmt->loop_var->content);
+        Value *next_value = nullptr;
+        switch (from_value->getType()->getTypeID()) {
+            case llvm::Type::IntegerTyID:
+                ir_builder.CreateStore(
+                        ir_builder.CreateAdd(cur_value, step_value, "next_tmp"), loop_var);
+                break;
+            default:
+                assert(false);
+                // todo
+                return nullptr;
+        }
+
+        Value *loop_cond = nullptr;
+        switch (from_value->getType()->getTypeID()) {
+            case llvm::Type::IntegerTyID:
+                //todo unsigned
+                loop_cond = ir_builder.CreateICmpSLE(
+                        ir_builder.CreateLoad(loop_var), to_value, "loop_cond");
+                break;
+            default:
+                assert(false);
+                // todo
+                return nullptr;
+        }
+
+        ir_builder.CreateCondBr(loop_cond, loop_block, loop_after_block);
+
+        cur_function->getBasicBlockList().push_back(loop_after_block);
+        ir_builder.SetInsertPoint(loop_after_block);
+
+        if (old_var != nullptr) {
+            (*linked_ctx->ctx)[for_stmt->loop_var->content] = loop_var;
+        } else {
+            linked_ctx->ctx->erase(for_stmt->loop_var->content);
+        }
+
+        return loop_body;
     }
 
     Value *code_gen_binary_exp(const ast::BiExp *pExp) {
@@ -307,9 +539,52 @@ struct LLVMBuilder {
                 assert(false);
             case MarkerType::Div:
                 if (lhs->getType()->isIntegerTy()) {
-                    return ir_builder.CreateUDiv(lhs, rhs, "div_tmp");
+                    return ir_builder.CreateSDiv(lhs, rhs, "div_tmp");
                 }
                 assert(false);
+
+                // a < b
+            case MarkerType::LT:
+                if (lhs->getType()->isIntegerTy()) {
+                    return ir_builder.CreateICmpSLT(lhs, rhs, "lt_tmp");
+                }
+                assert(false);
+
+                // a <= b
+            case MarkerType::LE:
+                if (lhs->getType()->isIntegerTy()) {
+                    return ir_builder.CreateICmpSLE(lhs, rhs, "le_tmp");
+                }
+                assert(false);
+
+                // a > b
+            case MarkerType::GT:
+                if (lhs->getType()->isIntegerTy()) {
+                    return ir_builder.CreateICmpSGT(lhs, rhs, "gt_tmp");
+                }
+                assert(false);
+
+                // a >= b
+            case MarkerType::GE:
+                if (lhs->getType()->isIntegerTy()) {
+                    return ir_builder.CreateICmpSGE(lhs, rhs, "ge_tmp");
+                }
+                assert(false);
+
+                // a = b
+            case MarkerType::EQ:
+                if (lhs->getType()->isIntegerTy()) {
+                    return ir_builder.CreateICmpEQ(lhs, rhs, "eq_tmp");
+                }
+                assert(false);
+
+                // a <> b
+            case MarkerType::NEQ:
+                if (lhs->getType()->isIntegerTy()) {
+                    return ir_builder.CreateICmpNE(lhs, rhs, "neq_tmp");
+                }
+                assert(false);
+
             default:
                 assert(false);
                 return nullptr;
@@ -479,22 +754,6 @@ struct LLVMBuilder {
 //    Value *code_gen_ident_list(const ast::IdentList *pList) {
 //        return nullptr;
 //    }
-//
-//    Value *code_gen_const_decl(const ast::ConstDecl *pDecl) {
-//        return nullptr;
-//    }
-//
-//    Value *code_gen_const_decls(const ast::ConstDecls *pDecls) {
-//        return nullptr;
-//    }
-//
-//    Value *code_gen_var_decl(const ast::VarDecl *pDecl) {
-//        return nullptr;
-//    }
-//
-//    Value *code_gen_var_decls(const ast::VarDecls *pDecls) {
-//        return nullptr;
-//    }
 
     Value *code_gen_statement(const ast::Statement *stmt) {
         switch (stmt->type) {
@@ -606,42 +865,7 @@ struct LLVMBuilder {
 //                return code_gen_ArrayTypeSpec(
 //                        reinterpret_cast<const ast::ArrayTypeSpec*>(node));
         }
-
-//        switch (node->type) {
-//            case NodeType::ExpNumber:
-//                return llvm::ConstantFP::get(ctx, llvm::APFloat(
-//                        //todo: int
-//                        double(reinterpret_cast<ExpNumber*>(node)->num->value)));
-//            case NodeType::ExpIdent:
-//                return ident_mapping.at(reinterpret_cast<ExpIdent*>(node)->ident->content);
-//            case NodeType::BiExp:
-//                return code_gen_binary_exp(reinterpret_cast<BiExp*>(node));
-//            case NodeType::UnExp:
-//                return code_gen_unary_exp(reinterpret_cast<UnExp*>(node));
-//            case NodeType::ExpFuncCall:
-//                break;
-//            default:
-//                assert(false);
-//                return nullptr;
-//        }
-//        assert(false);
-//        return nullptr;
     }
-
-//    Value *code_gen_unary_exp(UnExp *pExp) {
-//        auto lhs = code_gen(pExp->lhs);
-//        assert(lhs != nullptr);
-//        switch (pExp->marker->marker_type) {
-//            case MarkerType::Add:
-//                return lhs;
-//            case MarkerType::Sub:
-//                return ir_builder.CreateFNeg(lhs, "negative_tmp");
-//            default :
-//                assert(false);
-//                return nullptr;
-//        }
-//    }
 };
-
 
 #endif //PASCAL_S_LLVM_H

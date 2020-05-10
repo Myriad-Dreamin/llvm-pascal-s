@@ -1,0 +1,13 @@
+program main;
+ var a: integer;
+ begin
+   read_int64(a);
+   if a < 0 then
+      write_char('<')
+    else
+    begin
+      write_char('>');
+      write_char('=');
+    end
+   main := 0;
+ end

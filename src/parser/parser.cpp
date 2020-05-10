@@ -482,7 +482,7 @@ ast::FunctionDecls *Parser<Lexer>::_parse_function_decls(ast::FunctionDecls *dec
                 basic->key_type == KeywordType::Boolean
                 ) {
             next_token();
-            proc->fn_def = basic;
+            proc->return_type = new ast::BasicTypeSpec(basic);
         } else {
             errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", basic));
             delete proc;
@@ -695,6 +695,8 @@ ast::Statement *Parser<Lexer>::parse_statement(std::set<const Token *> *till) {
             // eat ; if possible
             if (predicate::is_semicolon(current_token)) {
                 next_token();
+            } else if (stmt == nullptr) {
+                assert(false);
             }
         }
 
@@ -913,6 +915,24 @@ ast::Exp *Parser<Lexer>::parse_exp(const std::set<const Token *> *till) {
 
                 // a / b
             case MarkerType::Div:
+
+                // a < b
+            case MarkerType::LT:
+
+                // a <= b
+            case MarkerType::LE:
+
+                // a > b
+            case MarkerType::GT:
+
+                // a >= b
+            case MarkerType::GE:
+
+                // a = b
+            case MarkerType::EQ:
+
+                // a <> b
+            case MarkerType::NEQ:
 
                 // todo: a % b
 //            case MarkerType::Mod:

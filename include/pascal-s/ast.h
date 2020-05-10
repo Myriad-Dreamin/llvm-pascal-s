@@ -189,15 +189,17 @@ namespace ast {
 
     struct Procedure : public Function {
         ParamList *params;
+        TypeSpec *return_type;
 
 
         explicit Procedure(const Keyword *fn_def, const Identifier *name)
-                : Function(name, fn_def, nullptr, nullptr, nullptr), params(nullptr) {
+                : Function(name, fn_def, nullptr, nullptr, nullptr), return_type(nullptr), params(nullptr) {
             fn_type = Type::Procedure;
         }
 
         ~Procedure() {
             deleteAST(params);
+            deleteAST(return_type);
         }
     };
 

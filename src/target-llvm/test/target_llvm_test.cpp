@@ -59,13 +59,13 @@ INSTANTIATE_TEST_SUITE_P(Simple, GoodGenerateLLVMIRTest, testing::Values( /* NOL
 //            "program main; begin "
 //            "    main := 1 + 1; "
 //            "end"},
-        GenerateLLVMIRTestCase{"program main;\n"
-                               "  var a: integer;\n"
-                               "  begin\n"
-                               "    read_int64(a);\n"
-                               "    write_int64(a);\n"
-                               "    main := 0;\n"
-                               "  end"}
+//        GenerateLLVMIRTestCase{"program main;\n"
+//                               "  var a: integer;\n"
+//                               "  begin\n"
+//                               "    read_int64(a);\n"
+//                               "    write_int64(a);\n"
+//                               "    main := 0;\n"
+//                               "  end"}
 //                                   ,
 //        GenerateLLVMIRTestCase{"program main;\n"
 //                               " begin\n"
@@ -82,6 +82,19 @@ INSTANTIATE_TEST_SUITE_P(Simple, GoodGenerateLLVMIRTest, testing::Values( /* NOL
 //                               //               "   write_char('d');\n"
 //                               "   main := 0;\n"
 //                               " end"}
+        GenerateLLVMIRTestCase{"program main;\n"
+                               "  var a: integer;\n"
+                               "  begin\n"
+                               "    read_int64(a);\n"
+                               "    if a < 0 then\n"
+                               "       write_char('<')\n"
+                               "     else\n"
+                               "     begin\n"
+                               "       write_char('>');\n"
+                               "       write_char('=');\n"
+                               "     end\n"
+                               "    main := 0;\n"
+                               "  end"}
 ));
 
 
