@@ -24,16 +24,29 @@ testing::Message &operator<<(testing::Message &msg, const Token *tok) {
     return internal::CmpHelperEQFailure(lhs_expression, rhs_expression, lhs, rhs);\
 }}while(0)
 
+#define str_equal_field(val1, val2) do{if (std::string(val1) != val2) {\
+    return internal::CmpHelperEQFailure(lhs_expression, rhs_expression, lhs, rhs);\
+}}while(0)
+
 static testing::AssertionResult CompareIdentifier(const char *lhs_expression,
                                                   const char *rhs_expression, const Identifier *lhs,
                                                   const Identifier *rhs) {
     using namespace testing;
 
-    equal_field(lhs->content, lhs->content);
+    str_equal_field(lhs->content, rhs->content);
 
     return AssertionSuccess();
 }
 
+
+static testing::AssertionResult
+CompareMarker(const char *lhs_expression, const char *rhs_expression, const Marker *lhs, const Marker *rhs) {
+    using namespace testing;
+
+    equal_field(lhs->marker_type, lhs->marker_type);
+
+    return AssertionSuccess();
+}
 
 static testing::AssertionResult CompareToken(const char *lhs_expression,
                                              const char *rhs_expression, const Token *lhs,
@@ -45,12 +58,18 @@ static testing::AssertionResult CompareToken(const char *lhs_expression,
             return CompareIdentifier(lhs_expression, rhs_expression,
                                      reinterpret_cast<const Identifier *>(lhs),
                                      reinterpret_cast<const Identifier *>(rhs));
+        case TokenType::Marker:
+            return CompareMarker(lhs_expression, rhs_expression,
+                                 reinterpret_cast<const Marker *>(lhs),
+                                 reinterpret_cast<const Marker *>(rhs));
         default:
             return AssertionFailure() << fmt::format("unknown token type {}", lhs->type);
     }
     assert(false);
 }
 
+
 #undef equal_field
+#undef str_equal_field
 
 #endif //PASCAL_S_TOKEN_HELPER_H

@@ -35,14 +35,11 @@ const char *pascal_main_function_name = "pascal_s_main_520d4d14";
 //    fPassM.doInitialization();
 
     auto value = builder.code_gen(task->source);
-    std::string buf;
-    llvm::raw_string_ostream os(buf);
 
     assert(value != nullptr);
 
     if (task->out_ir) {
-        value->print(os, true);
-        std::cout << buf;
+        builder.modules.dump();
     }
 //    llvm::InitializeAllTargetInfos();
 //    llvm::InitializeAllTargets();

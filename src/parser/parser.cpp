@@ -596,7 +596,9 @@ ast::ParamList *Parser<Lexer>::_parse_param_list(ast::ParamList *params) {
     params->params.push_back(spec);
 
     //look ahead
-    if (current_token == nullptr || current_token->type != TokenType::Identifier) {
+    // ;
+    if (predicate::is_semicolon(current_token)) {
+        next_token();
 
         // param list
         _parse_param_list(params);
@@ -612,6 +614,8 @@ ast::ParamSpec *Parser<Lexer>::parse_param() {
         keyword_var->key_type != KeywordType::Var) {
 
         keyword_var = nullptr;
+    } else {
+        next_token();
     }
 
     // id list
@@ -638,13 +642,10 @@ ast::ParamSpec *Parser<Lexer>::parse_param() {
         errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "basic type spec", basic));
         return nullptr;
     }
+    auto spec = new ast::BasicTypeSpec(basic);
     next_token();
 
-    // ;
-    expected_enum_type(predicate::is_semicolon, predicate::marker_semicolon);
-    next_token();
-
-    return new ast::ParamSpec(keyword_var, id_list, new ast::BasicTypeSpec(basic));
+    return new ast::ParamSpec(keyword_var, id_list, spec);
 }
 
 template<typename Lexer>
@@ -915,6 +916,9 @@ ast::Exp *Parser<Lexer>::parse_exp(const std::set<const Token *> *till) {
 
                 // a / b
             case MarkerType::Div:
+
+                // a % b
+            case MarkerType::Mod:
 
                 // a < b
             case MarkerType::LT:

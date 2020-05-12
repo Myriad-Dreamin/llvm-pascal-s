@@ -73,7 +73,7 @@ enum class KeywordType {
 
 
 using marker_type_underlying_type = uint8_t ;
-enum class MarkerType :marker_type_underlying_type {
+enum class MarkerType : marker_type_underlying_type {
     Range = 0x00, // ..
     NEQ = 0x01, // <>
     LE = 0x02, // <=
@@ -83,6 +83,7 @@ enum class MarkerType :marker_type_underlying_type {
     GT = 0x06, // >
     Add = 0x10, // +
     Sub = 0x11, // -
+    Mod = 0x12, // %
     Mul = 0x20, // *
     Div = 0x21, // /
 
@@ -201,6 +202,8 @@ extern const cls cls_lower ##_## lower;
     pascal_s_predicator(Marker, marker, sub, Sub)
     pascal_s_predicator(Marker, marker, mul, Mul)
     pascal_s_predicator(Marker, marker, div, Div)
+
+    pascal_s_predicator(Marker, marker, mod, Mod)
 
     pascal_s_predicator(Marker, marker, lparen, LParen)
     pascal_s_predicator(Marker, marker, rparen, RParen)

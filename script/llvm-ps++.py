@@ -16,8 +16,8 @@ parser.add_argument('--use-self-main', type=bool, help='Use user-defined main li
 parser.add_argument('--work-dir', type=str, help='Working directory')
 parser.add_argument('--src', type=str, help='Source path', required=True)
 parser.add_argument('--out', default="build", type=str, help='Output path')
-parser.add_argument('--out-ir', type=bool, help='Output IR Code, enum of {json, yml, fmt, binary, console}')
-parser.add_argument('--out-token', type=bool, help='Output tokens, enum of {json, yml, fmt, binary, console}')
+parser.add_argument('--out-ir', type=str, help='Output IR Code, enum of {json, yml, fmt, binary, console}')
+parser.add_argument('--out-token', type=str, help='Output tokens, enum of {json, yml, fmt, binary, console}')
 
 args = parser.parse_args()
 
@@ -36,11 +36,23 @@ if not os.path.exists(args.out):
     os.mkdir(args.out)
 object_file = os.path.abspath(
     os.path.join(args.out, os.path.splitext(os.path.basename(args.src))[0] + '.o'))
-asm = ' '.join([
+
+asm_options = [
     args.assembler,
+]
+
+asm_options += [
     '--src=' + os.path.abspath(args.src),
-    '--o=' + object_file
-])
+    '--o=' + object_file,
+]
+
+if args.out_ir is not None:
+    asm_options.append('--out-ir=' + args.out_ir)
+
+if args.out_token is not None:
+    asm_options.append('--out-token=' + args.out_token)
+
+asm = ' '.join(asm_options)
 # print(asm)
 print('assembling...')
 print('generated', object_file)

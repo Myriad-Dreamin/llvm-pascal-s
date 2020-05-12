@@ -83,6 +83,8 @@ TEST_P(GoodLexerGetAllTokensTest, WillNotThrowException) /* NOLINT */
 INSTANTIATE_TEST_SUITE_P(Simple, GoodLexerGetAllTokensTest, testing::Values( /* NOLINT */
         LexerGetAllTokensTestCase{"a",
                                   new std::vector<Token *>({new Identifier("a")})},
+        LexerGetAllTokensTestCase{"mod",
+                                  new std::vector<Token *>({new Marker(MarkerType::Mod)})},
         LexerGetAllTokensTestCase{"a ",
                                   new std::vector<Token *>({new Identifier("a")})},
         LexerGetAllTokensTestCase{"a b",

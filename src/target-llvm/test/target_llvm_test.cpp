@@ -47,9 +47,9 @@ TEST_P(GoodGenerateLLVMIRTest, WillNotThrowException) /* NOLINT */
     ASSERT_NE(value, nullptr);
     std::string buf;
     llvm::raw_string_ostream os(buf);
-
-    value->print(os, true);
-    std::cout << buf;
+    builder.modules.dump();
+//    value->print(os, true);
+//    std::cout << buf;
 }
 
 INSTANTIATE_TEST_SUITE_P(Simple, GoodGenerateLLVMIRTest, testing::Values( /* NOLINT */
@@ -82,19 +82,31 @@ INSTANTIATE_TEST_SUITE_P(Simple, GoodGenerateLLVMIRTest, testing::Values( /* NOL
 //                               //               "   write_char('d');\n"
 //                               "   main := 0;\n"
 //                               " end"}
-        GenerateLLVMIRTestCase{"program main;\n"
-                               "  var a: integer;\n"
-                               "  begin\n"
-                               "    read_int64(a);\n"
-                               "    if a < 0 then\n"
-                               "       write_char('<')\n"
-                               "     else\n"
-                               "     begin\n"
-                               "       write_char('>');\n"
-                               "       write_char('=');\n"
-                               "     end\n"
-                               "    main := 0;\n"
-                               "  end"}
+//        GenerateLLVMIRTestCase{"program main;\n"
+//                               "  var a: integer;\n"
+//                               "  begin\n"
+//                               "    read_int64(a);\n"
+//                               "    if a < 0 then\n"
+//                               "       write_char('<')\n"
+//                               "     else\n"
+//                               "     begin\n"
+//                               "       write_char('>');\n"
+//                               "       write_char('=');\n"
+//                               "     end\n"
+//                               "    main := 0;\n"
+//                               "  end"},
+        GenerateLLVMIRTestCase{"program example();\n"
+                               "    var x,y:integer;\n"
+                               "    function gcd(a,b:integer):integer;\n"
+                               "        begin\n"
+                               "            if b=0 then gcd:=a\n"
+                               "            else gcd:=gcd(b, a mod b)\n"
+                               "        end\n"
+                               "    begin\n"
+                               "        read_int64(x);\n"
+                               "        read_int64(y);\n"
+                               "        write_int64(gcd(x, y))\n"
+                               "    end"}
 ));
 
 
