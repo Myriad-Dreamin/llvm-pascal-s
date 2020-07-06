@@ -43,7 +43,7 @@ LLVMBuilder::Value *LLVMBuilder::code_gen_statement(const ast::Statement *stmt) 
                     reinterpret_cast<const ast::StatementList *>(stmt));
         case ast::Type::CompoundStatement:
             return code_gen_statement_block(
-                    reinterpret_cast<const ast::CompoundStatement *>(stmt)->state);
+                    reinterpret_cast<const ast::CompoundStatement *>(stmt)->stmts);
         case ast::Type::ExecStatement:
             return code_gen_exec_statement(
                     reinterpret_cast<const ast::ExecStatement *>(stmt));
@@ -156,7 +156,7 @@ LLVMBuilder::Value *LLVMBuilder::code_gen(const ast::Node *node) {
 //                        reinterpret_cast<const ast::ArrayTypeSpec*>(node));
         case ast::Type::CompoundStatement:
             return code_gen_statement_block(
-                    reinterpret_cast<const ast::CompoundStatement *>(node)->state);
+                    reinterpret_cast<const ast::CompoundStatement *>(node)->stmts);
         case ast::Type::Read:
             return code_gen_read_statement(
                     reinterpret_cast<const ast::Read *>(node));
@@ -170,12 +170,6 @@ LLVMBuilder::Value *LLVMBuilder::code_gen(const ast::Node *node) {
             llvm_pascal_s_report_semantic_error_n(node, "gen method not found");
             break;
         case ast::Type::Expression:
-            llvm_pascal_s_report_semantic_error_n(node, "gen method not found");
-            break;
-        case ast::Type::SimpleExpression:
-            llvm_pascal_s_report_semantic_error_n(node, "gen method not found");
-            break;
-        case ast::Type::Procedure:
             llvm_pascal_s_report_semantic_error_n(node, "gen method not found");
             break;
         case ast::Type::Exp:

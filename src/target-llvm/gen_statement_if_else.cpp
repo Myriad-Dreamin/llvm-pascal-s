@@ -9,9 +9,9 @@
 LLVMBuilder::Value *LLVMBuilder::code_gen_if_else_statement(const ast::IfElseStatement *if_else_stmt) {
 
     // cond_value = gen_exp(if_else_stmt.cond)
-    Value *cond = code_gen(if_else_stmt->expression);
+    Value *cond = code_gen(if_else_stmt->cond);
     if (!cond) {
-        llvm_pascal_s_report_semantic_error_n(if_else_stmt->expression, "gen expression error");
+        llvm_pascal_s_report_semantic_error_n(if_else_stmt->cond, "gen expression error");
         return nullptr;
     }
 
@@ -28,7 +28,7 @@ LLVMBuilder::Value *LLVMBuilder::code_gen_if_else_statement(const ast::IfElseSta
             break;
         default:
             llvm_pascal_s_report_semantic_error_n(
-                    if_else_stmt->expression,
+                    if_else_stmt->cond,
                     fmt::format("could not perform !=(<>) on not boolean condition expression,"
                                 "if-exp type = {}", format_type(cond->getType())));
             return nullptr;

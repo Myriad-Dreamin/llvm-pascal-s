@@ -7,7 +7,7 @@
 
 LLVMBuilder::Function *LLVMBuilder::code_gen_program(const ast::Program *pProgram) {
 
-    Function *program = modules.getFunction(pProgram->programHead->id->ident->content);
+    Function *program = modules.getFunction(pProgram->head->id->ident->content);
 
     // check and gen function proto
     if (!program) {
@@ -15,7 +15,7 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_program(const ast::Program *pProgra
                 llvm::Type::getInt32Ty(ctx), false);
 
         program = Function::Create(prototype, Function::ExternalLinkage,
-                                   pProgram->programHead->id->ident->content, modules);
+                                   pProgram->head->id->ident->content, modules);
     } else {
         llvm_pascal_s_report_semantic_error_n(pProgram, "main function redeclared");
         return nullptr;
@@ -28,16 +28,16 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_program(const ast::Program *pProgra
     // create local variable map this.const_ctx
     std::map<std::string, Value *> program_const_this;
     // insert program.const_decls to this.const_ctx
-    insert_const_decls(program_const_this, pProgram->programBody->constdecls);
+    insert_const_decls(program_const_this, pProgram->body->const_decls);
     // create local variable map this.ctx
     std::map<std::string, pascal_s::ArrayInfo *> program_array_infos;
     std::map<std::string, llvm::Value *> program_this;
     // insert program.var_decls to this.ctx
-    insert_var_decls(program, program_array_infos, program_this, pProgram->programBody->vardecls);
+    insert_var_decls(program, program_array_infos, program_this, pProgram->body->var_decls);
 
     // check this.const_ctx and this.ctx to avoid conflict
-    if (pProgram->programBody->constdecls != nullptr) {
-        for (auto d : pProgram->programBody->constdecls->decls) {
+    if (pProgram->body->const_decls != nullptr) {
+        for (auto d : pProgram->body->const_decls->decls) {
             if (program_this.count(d->ident->content)) {
                 llvm_pascal_s_report_semantic_error_n(
                         d->ident, fmt::format("ident redeclared"));
@@ -53,15 +53,15 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_program(const ast::Program *pProgra
     llvm::IRBuilder<> dfn_block(&program->getEntryBlock(),
                                 program->getEntryBlock().begin());
     auto ptr = dfn_block.CreateAlloca(llvm::Type::getInt32Ty(
-            ctx), nullptr, pProgram->programHead->id->ident->content);
+            ctx), nullptr, pProgram->head->id->ident->content);
 
     // gen(program.func_decls)
-    if (pProgram->programBody->subprogram != nullptr) {
-        for (auto fn_decl : pProgram->programBody->subprogram->subprogram) {
-            if (program_this.count(fn_decl->subhead->name->content) ||
-                program_const_this.count(fn_decl->subhead->name->content)) {
+    if (pProgram->body->prog_decls != nullptr) {
+        for (auto fn_decl : pProgram->body->prog_decls->vec) {
+            if (program_this.count(fn_decl->head->name->content) ||
+                program_const_this.count(fn_decl->head->name->content)) {
                 llvm_pascal_s_report_semantic_error_n(
-                        fn_decl->subhead->name,
+                        fn_decl->head->name,
                         fmt::format("function redeclared, another variable is in this context"));
             }
             code_gen_subprogram(fn_decl);
@@ -73,25 +73,25 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_program(const ast::Program *pProgra
     ir_builder.SetInsertPoint(body);
 
     // check and insert %program.name to this.ctx
-    if (program_this.count(pProgram->programHead->id->ident->content) ||
-        program_const_this.count(pProgram->programHead->id->ident->content)) {
+    if (program_this.count(pProgram->head->id->ident->content) ||
+        program_const_this.count(pProgram->head->id->ident->content)) {
         llvm_pascal_s_report_semantic_error_n(
-                pProgram->programHead->id->ident, fmt::format("ident redeclared"));
+                pProgram->head->id->ident, fmt::format("ident redeclared"));
     }
-    program_this[pProgram->programHead->id->ident->content] = ptr;
+    program_this[pProgram->head->id->ident->content] = ptr;
 
     // out_code( store i32 0, i32* %program.name )
     ir_builder.CreateStore(llvm::Constant::getIntegerValue(llvm::Type::getInt32Ty(
             ctx), llvm::APInt(32, 0)), ptr);
 
     // gen_statement(program.body) if not null
-    if (pProgram->programBody->compound->state->statement.empty() ||
-        code_gen_statement(pProgram->programBody->compound)) {
+    if (pProgram->body->compound->stmts->stmts.empty() ||
+        code_gen_statement(pProgram->body->compound)) {
         // if body generated
         // out_code( %ret_tmp = load i32 from i32* %program.name )
         // out_code( ret i32: %ret_tmp )
         ir_builder.CreateRet(
-                ir_builder.CreateLoad(program_this[pProgram->programHead->id->ident->content], "ret_tmp"));
+                ir_builder.CreateLoad(program_this[pProgram->head->id->ident->content], "ret_tmp"));
 
         llvm::verifyFunction(*program);
         fn_pass_manager.run(*program);

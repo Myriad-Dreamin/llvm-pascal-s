@@ -17,7 +17,7 @@ ast::ProgramHead *RecursiveParser<Lexer>::parse_program_head() {
 
     for (;;) {
         if (current_token == nullptr || predicate::is_semicolon(current_token)) {
-            return new ast::ProgramHead(new ast::ExpKeyword(program), new ast::Ident(ident), nullptr);
+            return new ast::ProgramHead(program, new ast::Ident(ident), nullptr);
         }
         // maybe ( id list )
         if (predicate::is_lparen(current_token)) { break; }
@@ -29,9 +29,9 @@ ast::ProgramHead *RecursiveParser<Lexer>::parse_program_head() {
             skip_any_but_eof_token_v(&predicate::marker_lparen)
         }
         errors.push_back(new PascalSParseExpectVGotError(__FUNCTION__, &predicate::marker_lparen, current_token));
-        return new ast::ProgramHead(new ast::ExpKeyword(program), new ast::Ident(ident), nullptr);
+        return new ast::ProgramHead(program, new ast::Ident(ident), nullptr);
     }
 
     // maybe ( id list )
-    return new ast::ProgramHead(new ast::ExpKeyword(program), new ast::Ident(ident), parse_id_list_with_paren());
+    return new ast::ProgramHead(program, new ast::Ident(ident), parse_id_list_with_paren());
 }

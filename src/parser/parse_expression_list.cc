@@ -49,7 +49,7 @@ ast::ExpressionList *RecursiveParser<Lexer>::parse_expression_list_with_bracket(
 
     ast::copy_pos_between_tokens(exp_list, lp, rp);
 
-    if (exp_list->explist.size() == 0) {
+    if (exp_list->vec.size() == 0) {
         errors.push_back(new PascalSParseExpectSGotError(__FUNCTION__, "any expression", rp));
     }
 
@@ -69,7 +69,7 @@ RecursiveParser<Lexer>::parse_expression_list(const F &is_follow, const std::set
         }
 
         // extend production
-        ret->explist.push_back(parse_exp(till));
+        ret->vec.push_back(parse_exp(till));
 
         // eat , if possible
         if (predicate::is_comma(current_token)) {

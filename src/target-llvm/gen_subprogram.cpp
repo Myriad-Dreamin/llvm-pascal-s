@@ -6,28 +6,28 @@
 #include <fmt/core.h>
 
 LLVMBuilder::Function *LLVMBuilder::code_gen_subprogram(const ast::Subprogram *pSubprogram) {
-    Function *fn = modules.getFunction(pSubprogram->subhead->name->content);
+    Function *fn = modules.getFunction(pSubprogram->head->name->content);
 
     // check and gen function proto llvm_func
     if (!fn) {
         llvm::Type *llvm_ret_type = nullptr;
-        if (pSubprogram->subhead->ret_type == nullptr) {
+        if (pSubprogram->head->ret_type == nullptr) {
             llvm_ret_type = llvm::Type::getVoidTy(ctx);
         } else {
-            llvm_ret_type = create_type(pSubprogram->subhead->ret_type);
+            llvm_ret_type = create_type(pSubprogram->head->ret_type);
         }
 
         std::vector<llvm::Type *> args_proto;
 
-        if (pSubprogram->subhead->decls != nullptr) {
+        if (pSubprogram->head->decls != nullptr) {
             int args_proto_size = 0;
 
-            for (auto arg_spec : pSubprogram->subhead->decls->params) {
+            for (auto arg_spec : pSubprogram->head->decls->params) {
                 args_proto_size += arg_spec->id_list->idents.size();
             }
             args_proto.reserve(args_proto_size);
 
-            for (auto arg_spec : pSubprogram->subhead->decls->params) {
+            for (auto arg_spec : pSubprogram->head->decls->params) {
                 llvm::Type *llvm_arg_type = create_type(arg_spec->spec);
 
                 if (arg_spec->keyword_var != nullptr) {
@@ -44,11 +44,11 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_subprogram(const ast::Subprogram *p
                 llvm_ret_type, args_proto, false);
 
         fn = Function::Create(prototype, Function::ExternalLinkage,
-                              pSubprogram->subhead->name->content, modules);
+                              pSubprogram->head->name->content, modules);
 
-        if (pSubprogram->subhead->decls != nullptr) {
+        if (pSubprogram->head->decls != nullptr) {
             int arg_cursor = 0;
-            for (auto arg_spec : pSubprogram->subhead->decls->params) {
+            for (auto arg_spec : pSubprogram->head->decls->params) {
                 for (auto ident: arg_spec->id_list->idents) {
                     fn->getArg(arg_cursor++)->setName(ident->content);
                 }
@@ -56,9 +56,9 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_subprogram(const ast::Subprogram *p
         }
     } else {
         // repeated implementation is not allowed
-        if (pSubprogram->subbody != nullptr) {
+        if (pSubprogram->body != nullptr) {
             llvm_pascal_s_report_semantic_error_n(
-                    pSubprogram->subhead,
+                    pSubprogram->head,
                     "subprogram has multiple implementation");
             return nullptr;
         }
@@ -66,16 +66,16 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_subprogram(const ast::Subprogram *p
         // repeated definition is allowed, so just check signature
 
         // check void param signature
-        if (pSubprogram->subhead->decls == nullptr) {
+        if (pSubprogram->head->decls == nullptr) {
             llvm_pascal_s_report_semantic_error_n(
-                    pSubprogram->subhead,
+                    pSubprogram->head,
                     "subprogram is already defined, but prototype are different (want empty param list)");
             return nullptr;
         }
 
         // check signature
         int arg_cursor = 0, arg_size = fn->arg_size();
-        for (auto arg_spec : pSubprogram->subhead->decls->params) {
+        for (auto arg_spec : pSubprogram->head->decls->params) {
             llvm::Type *llvm_arg_type = create_type(arg_spec->spec);
 
             if (arg_spec->keyword_var != nullptr) {
@@ -111,16 +111,16 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_subprogram(const ast::Subprogram *p
     // create local const map this.const_ctx
     std::map<std::string, Value *> program_const_this;
     // insert subprogram.const_decls to this.const_ctx
-    insert_const_decls(program_const_this, pSubprogram->subbody->constdecls);
+    insert_const_decls(program_const_this, pSubprogram->body->const_decls);
     // create local variable map this.ctx
     std::map<std::string, pascal_s::ArrayInfo *> program_array_infos;
     std::map<std::string, llvm::Value *> program_this;
     // insert subprogram.var_decls to this.ctx
-    insert_var_decls(fn, program_array_infos, program_this, pSubprogram->subbody->vardecls, true);
+    insert_var_decls(fn, program_array_infos, program_this, pSubprogram->body->var_decls, true);
 
     // check this.const_ctx and this.ctx to avoid conflict
-    if (pSubprogram->subbody->constdecls != nullptr) {
-        for (auto d : pSubprogram->subbody->constdecls->decls) {
+    if (pSubprogram->body->const_decls != nullptr) {
+        for (auto d : pSubprogram->body->const_decls->decls) {
             if (program_this.count(d->ident->content)) {
                 llvm_pascal_s_report_semantic_error_n(
                         d->ident, fmt::format("ident redeclared"));
@@ -134,10 +134,10 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_subprogram(const ast::Subprogram *p
 
 //    if (pSubprogram->subbody->subprogram != nullptr) {
 //        for (auto fn_decl : pSubprogram->subbody->subprogram->subprogram) {
-//            if (program_this.count(fn_decl->subhead->name->content) ||
-//                program_const_this.count(fn_decl->subhead->name->content)) {
+//            if (program_this.count(fn_decl->head->name->content) ||
+//                program_const_this.count(fn_decl->head->name->content)) {
 //                llvm_pascal_s_report_semantic_error_n(
-//                        fn_decl->subhead->name,
+//                        fn_decl->head->name,
 //                        fmt::format("function redeclared, another variable is in this context"));
 //            }
 //            code_gen_subprogram(fn_decl);
@@ -145,22 +145,22 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_subprogram(const ast::Subprogram *p
 //    }
 
     // insert subprogram.param_decls to this.ctx and this.const_ctx
-    if (pSubprogram->subhead->decls) {
-        insert_param_decls(pSubprogram->subhead->decls->visit_pos(), fn, program_this, program_const_this);
+    if (pSubprogram->head->decls) {
+        insert_param_decls(pSubprogram->head->decls->visit_pos(), fn, program_this, program_const_this);
     }
 
     // out_code( define variable ret_type: %subprogram.name )
     if (!fn->getReturnType()->isVoidTy()) {
-        if (program_this.count(pSubprogram->subhead->name->content) ||
-            program_const_this.count(pSubprogram->subhead->name->content)) {
+        if (program_this.count(pSubprogram->head->name->content) ||
+            program_const_this.count(pSubprogram->head->name->content)) {
             llvm_pascal_s_report_semantic_error_n(
-                    pSubprogram->subhead->name,
+                    pSubprogram->head->name,
                     fmt::format("ident redeclared"));
         }
 
         llvm::IRBuilder<> dfn_block(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-        program_this[pSubprogram->subhead->name->content] = dfn_block.CreateAlloca(
-                fn->getReturnType(), nullptr, pSubprogram->subhead->name->content);
+        program_this[pSubprogram->head->name->content] = dfn_block.CreateAlloca(
+                fn->getReturnType(), nullptr, pSubprogram->head->name->content);
     }
 
     // 重新设置builder指向的basic block，虽然没有函数嵌套，但执行这个动作可以保证生成是正确的
@@ -168,8 +168,8 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_subprogram(const ast::Subprogram *p
     ir_builder.SetInsertPoint(body);
 
     // generate body
-    if (pSubprogram->subbody->compound->state->statement.empty() ||
-        code_gen_statement(pSubprogram->subbody->compound)) {
+    if (pSubprogram->body->compound->stmts->stmts.empty() ||
+        code_gen_statement(pSubprogram->body->compound)) {
         // if body generated
         if (fn->getReturnType()->isVoidTy()) {
             // out_code( ret void )
@@ -178,7 +178,7 @@ LLVMBuilder::Function *LLVMBuilder::code_gen_subprogram(const ast::Subprogram *p
             // out_code( %ret_tmp = load ret_type from %subprogram.name )
             // out_code( ret ret_type: %ret_tmp )
             ir_builder.CreateRet(
-                    ir_builder.CreateLoad(program_this[pSubprogram->subhead->name->content], "ret_tmp"));
+                    ir_builder.CreateLoad(program_this[pSubprogram->head->name->content], "ret_tmp"));
         }
 
         llvm::verifyFunction(*fn);

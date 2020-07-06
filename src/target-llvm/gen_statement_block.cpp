@@ -9,7 +9,7 @@ LLVMBuilder::Value *LLVMBuilder::code_gen_statement_block(const ast::StatementLi
     Value *block_value = nullptr;
     bool collapsed = false;
 
-    for (auto stmt : pBlock->statement) {
+    for (auto stmt : pBlock->stmts) {
 
         // block_value = gen_statement(statement)
         block_value = code_gen_statement(stmt);

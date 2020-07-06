@@ -15,11 +15,11 @@ ast::CompoundStatement *RecursiveParser<Lexer>::parse_compound_statement(std::se
 template<typename Lexer>
 ast::CompoundStatement *RecursiveParser<Lexer>::_parse_compound_statement(std::set<const Token *> *till) {
     auto block = __parse_compound_statement(till);
-    if (block->state && !block->state->statement.empty()) {
-        block->length = block->state->statement.back()->length +
-                        block->state->statement.back()->offset - block->offset;
+    if (block->stmts && !block->stmts->stmts.empty()) {
+        block->length = block->stmts->stmts.back()->length +
+                        block->stmts->stmts.back()->offset - block->offset;
     }
-    if (block->state) ast::copy_pos_with_check(block, block->state);
+    if (block->stmts) ast::copy_pos_with_check(block, block->stmts);
     return block;
 }
 
@@ -40,7 +40,7 @@ ast::CompoundStatement *RecursiveParser<Lexer>::__parse_compound_statement(std::
 
         // eof
         if (current_token == nullptr) {
-            sl->statement.swap(stmts);
+            sl->stmts.swap(stmts);
             return fall_expect_v(&predicate::keyword_end), block;
         }
 
@@ -74,7 +74,7 @@ ast::CompoundStatement *RecursiveParser<Lexer>::__parse_compound_statement(std::
 
         for (;;) {
             if (current_token == nullptr) {
-                sl->statement.swap(stmts);
+                sl->stmts.swap(stmts);
                 return fall_expect_s("keyword 'end' or marker ';'"), block;
             }
 
@@ -85,7 +85,7 @@ ast::CompoundStatement *RecursiveParser<Lexer>::__parse_compound_statement(std::
             }
 
             skip_any_but_eof_token_s("keyword 'end' or marker ';'");
-            sl->statement.swap(stmts);
+            sl->stmts.swap(stmts);
             return fall_expect_s("keyword 'end' or marker ';'"), block;
         }
 
@@ -103,6 +103,6 @@ ast::CompoundStatement *RecursiveParser<Lexer>::__parse_compound_statement(std::
     // end
     auto end_tok = current_token;
     next_token();
-    sl->statement.swap(stmts);
+    sl->stmts.swap(stmts);
     return block;
 }

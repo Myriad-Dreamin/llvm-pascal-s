@@ -7,7 +7,6 @@
 
 template<typename Lexer>
 ast::Statement *RecursiveParser<Lexer>::parse_if_else_statement(std::set<const Token *> *till) {
-#define cond expression
     auto *if_else = new ast::IfElseStatement();
 
     // if
@@ -61,7 +60,6 @@ ast::Statement *RecursiveParser<Lexer>::parse_if_else_statement(std::set<const T
 
     ast::copy_pos_between_tokens(if_else, if_tok, if_else->else_part ? if_else->else_part : if_else->if_part);
     return if_else;
-#undef cond
 }
 
 

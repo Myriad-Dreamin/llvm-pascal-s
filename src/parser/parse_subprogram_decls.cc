@@ -16,11 +16,11 @@ ast::SubprogramDecls *RecursiveParser<Lexer>::_parse_subprogram_decls(ast::Subpr
     // function head
 
     auto subprogram = new ast::Subprogram(nullptr, nullptr);
-    decls->subprogram.push_back(subprogram);
+    decls->vec.push_back(subprogram);
 
     // subprogram head
-    subprogram->subhead = parse_subprogram_head();
-    if (subprogram->subhead == nullptr) {
+    subprogram->head = parse_subprogram_head();
+    if (subprogram->head == nullptr) {
         return decls;
     }
 
@@ -30,8 +30,8 @@ ast::SubprogramDecls *RecursiveParser<Lexer>::_parse_subprogram_decls(ast::Subpr
     next_token();
 
     // subprogram body
-    subprogram->subbody = parse_subprogram_body();
-    if (subprogram->subbody == nullptr) {
+    subprogram->body = parse_subprogram_body();
+    if (subprogram->body == nullptr) {
         return decls;
     }
 
@@ -40,7 +40,7 @@ ast::SubprogramDecls *RecursiveParser<Lexer>::_parse_subprogram_decls(ast::Subpr
     subprogram->semicolon = current_token;
     next_token();
 
-    ast::copy_pos_between_tokens(subprogram, subprogram->subhead, subprogram->semicolon);
+    ast::copy_pos_between_tokens(subprogram, subprogram->head, subprogram->semicolon);
 
     // look ahead
     if (predicate::is_function(current_token) || predicate::is_procedure(current_token)) {

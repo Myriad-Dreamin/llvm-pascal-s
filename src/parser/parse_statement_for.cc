@@ -7,9 +7,6 @@
 
 template<typename Lexer>
 ast::Statement *RecursiveParser<Lexer>::parse_for_statement(std::set<const Token *> *till) {
-#define loop_var id
-#define from_exp express1
-#define to_exp express2
     auto *for_stmt = new ast::ForStatement();
 
     // for
@@ -72,7 +69,4 @@ ast::Statement *RecursiveParser<Lexer>::parse_for_statement(std::set<const Token
 
     ast::copy_pos_between_tokens(for_stmt, for_tok, for_stmt->for_stmt);
     return for_stmt;
-#undef loop_var
-#undef from_exp
-#undef to_exp
 }

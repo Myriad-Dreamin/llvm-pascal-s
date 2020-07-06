@@ -78,7 +78,7 @@ LLVMBuilder::Value *LLVMBuilder::code_gen_write_statement(const ast::Write *stmt
     Value *ret_value = llvm::Constant::getIntegerValue(
             llvm::IntegerType::get(ctx, 32), llvm::APInt(32, 0));
 
-    for (auto exp_proto: stmt->exp_list->explist) {
+    for (auto exp_proto: stmt->exp_list->vec) {
 
         // exp = gen(exp)
         auto res = code_gen(exp_proto);

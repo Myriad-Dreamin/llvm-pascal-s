@@ -50,13 +50,9 @@ namespace ast {
 
         ConstDecl, // const declaration
 
-        ExpConst, // const value
-
         VarDecl, // var declarations
 
         VarDecls, // var declaration
-
-        TypeSpec, // type
 
         BasicTypeSpec, // basic type
 
@@ -82,29 +78,17 @@ namespace ast {
 
         StatementList, // statement list
 
-        Statement,
-
-        ElsePart, // else part
-
         VariableList, // variable list
 
         Variable, // variable
-
-        IdVarpart, // id varpart
 
         ExpressionList, // expression list
 
         Expression, // expression
 
-        SimpleExpression, // simple expression
-
-        Procedure,
-
         Function,
 
         ExecStatement,
-
-        //StatementBlock,
 
         Read,
 
@@ -128,10 +112,6 @@ namespace ast {
 
         Ident,
 
-        FunctionDecl,
-
-        FunctionDecls,
-
         ExpAssign,
 
         Exp,
@@ -139,12 +119,6 @@ namespace ast {
         UnExp,
 
         BiExp,
-
-        ExpMarker,
-
-        ExpKeyword,
-
-        ExpVoid,
     };
 
     struct Node;
@@ -158,11 +132,7 @@ namespace ast {
 
         Type type;
 
-        std::deque<Node *> children;
-
         explicit Node(Type type) : type(type) {}
-
-        char *GetTokenSymbol();
 
         pascal_s::Pos *visit_pos() {
             return reinterpret_cast<pascal_s::Pos *>(this);
@@ -289,13 +259,13 @@ namespace ast {
 
 
     struct ExpressionList : public Node {
-        std::vector<Exp *> explist;
+        std::vector<Exp *> vec;
 
         explicit ExpressionList() : Node(Type::ExpressionList) {}
 
         ~ExpressionList() {
 
-            for (auto exp : explist) {
+            for (auto exp : vec) {
 
                 deleteAST(exp);
 
@@ -531,12 +501,12 @@ namespace ast {
 
     struct StatementList : public Node {
 
-        std::vector<Statement *> statement;
+        std::vector<Statement *> stmts;
 
         explicit StatementList() : Node(Type::StatementList) {}
 
         ~StatementList() {
-            for (auto stm : statement) {
+            for (auto stm : stmts) {
 
                 deleteAST(stm);
 
@@ -571,17 +541,10 @@ namespace ast {
     };
 
 
-//struct StatementBlock : public Statement {
-//
-//  StatementBlock() : Statement(Type::StatementBlock) {}
-//
-//};
-
-
 
     struct IfElseStatement : public Statement {
 
-        Exp *expression = nullptr;
+        Exp *cond = nullptr;
 
         Statement *if_part = nullptr;
 
@@ -590,12 +553,12 @@ namespace ast {
         IfElseStatement() : Statement(Type::IfElseStatement) {}
 
         IfElseStatement(Exp *expression, Statement *if_part, Statement *else_part) : Statement(Type::IfElseStatement),
-                                                                                     expression(expression),
+                                                                                     cond(expression),
                                                                                      if_part(if_part),
                                                                                      else_part(else_part) {}
 
         ~IfElseStatement() {
-            deleteAST(expression);
+            deleteAST(cond);
             deleteAST(if_part);
             deleteAST(else_part);
         }
@@ -604,22 +567,22 @@ namespace ast {
 
     struct ForStatement : public Statement {
 
-        const Identifier *id = nullptr;
+        const Identifier *loop_var = nullptr;
 
-        Exp *express1 = nullptr;
+        Exp *from_exp = nullptr;
 
-        Exp *express2 = nullptr;
+        Exp *to_exp = nullptr;
 
         Statement *for_stmt = nullptr;
 
         ForStatement() : Statement(Type::ForStatement) {}
 
         ForStatement(const Identifier *id, Exp *express1, Exp *express2, Statement *for_stmt) : Statement(
-                Type::ForStatement), id(id), express1(express1), express2(express2), for_stmt(for_stmt) {}
+                Type::ForStatement), loop_var(id), from_exp(express1), to_exp(express2), for_stmt(for_stmt) {}
 
         ~ForStatement() {
-            deleteAST(express1);
-            deleteAST(express2);
+            deleteAST(from_exp);
+            deleteAST(to_exp);
             deleteAST(for_stmt);
         }
     };
@@ -685,46 +648,19 @@ namespace ast {
     };
 
 
-    struct ExpMarker : public Exp {
-        const Marker *value;
-
-
-        explicit ExpMarker(const Marker *value) : Exp(Type::ExpMarker), value(value) {
-            copy_pos_with_check(this, value);
-        }
-
-    };
-
-    struct ExpKeyword : public Exp {
-        const Keyword *value;
-
-        explicit ExpKeyword(const Keyword *value)
-                : Exp(Type::ExpKeyword), value(value) {
-            copy_pos_with_check(this, value);
-        }
-
-    };
-
-
-    struct ExpVoid : public Exp {
-
-        explicit ExpVoid() : Exp(Type::ExpVoid) {}
-
-    };
-
 
     struct CompoundStatement : public Statement {
 
-        StatementList *state = nullptr;
+        StatementList *stmts = nullptr;
 
         explicit CompoundStatement() : Statement(Type::CompoundStatement) {}
 
-        explicit CompoundStatement(StatementList *state) : Statement(Type::CompoundStatement), state(state) {
+        explicit CompoundStatement(StatementList *state) : Statement(Type::CompoundStatement), stmts(state) {
             copy_pos_with_check(this, state);
         }
 
         ~CompoundStatement() {
-            deleteAST(state);
+            deleteAST(stmts);
         }
     };
 
@@ -760,16 +696,16 @@ namespace ast {
 
     struct SubprogramBody : public Node { // subprogram body
 
-        ConstDecls *constdecls = nullptr;
+        ConstDecls *const_decls = nullptr;
 
-        VarDecls *vardecls = nullptr;
+        VarDecls *var_decls = nullptr;
 
         CompoundStatement *compound = nullptr;
 
         explicit SubprogramBody() : Node(Type::SubprogramBody) {}
 
         explicit SubprogramBody(ConstDecls *constdecls, VarDecls *vardecls, CompoundStatement *compound) :
-                Node(Type::SubprogramBody), constdecls(constdecls), vardecls(vardecls), compound(compound) {
+                Node(Type::SubprogramBody), const_decls(constdecls), var_decls(vardecls), compound(compound) {
             Node *l = constdecls;
             if (l == nullptr) l = vardecls;
             if (l == nullptr) l = compound;
@@ -778,8 +714,8 @@ namespace ast {
         }
 
         ~SubprogramBody() {
-            deleteAST(constdecls);
-            deleteAST(vardecls);
+            deleteAST(const_decls);
+            deleteAST(var_decls);
             deleteAST(compound);
         }
     };
@@ -787,30 +723,30 @@ namespace ast {
 
     struct Subprogram : public Function { // subprogram
 
-        SubprogramHead *subhead;
+        SubprogramHead *head;
 
         const Marker *semicolon = nullptr;
 
-        SubprogramBody *subbody;
+        SubprogramBody *body;
 
         explicit Subprogram(SubprogramHead *subhead, SubprogramBody *subbody) : Function(Type::Subprogram),
-                                                                                subhead(subhead), subbody(subbody) {}
+                                                                                head(subhead), body(subbody) {}
 
         ~Subprogram() {
-            deleteAST(subhead);
-            deleteAST(subbody);
+            deleteAST(head);
+            deleteAST(body);
         }
     };
 
 
     struct SubprogramDecls : public Node { // subprogram declarations
 
-        std::vector<Subprogram *> subprogram;
+        std::vector<Subprogram *> vec;
 
         explicit SubprogramDecls() : Node(Type::SubprogramDecls) {}
 
         ~SubprogramDecls() {
-            for (auto subp : subprogram) {
+            for (auto subp : vec) {
                 deleteAST(subp);
             }
         }
@@ -819,43 +755,43 @@ namespace ast {
 
     struct ProgramHead : public Node {
 
-        const ExpKeyword *programKeyword;
+        const Keyword *program;
 
         Ident *id;
 
-        IdentList *idlist;
+        IdentList *id_list;
 
-        explicit ProgramHead(const ExpKeyword *programKeyword, Ident *id, IdentList *idlist) : Node(Type::ProgramHead),
-                                                                                               programKeyword(
-                                                                                                       programKeyword),
-                                                                                               id(id), idlist(idlist) {
+        explicit ProgramHead(const Keyword *programKeyword, Ident *id, IdentList *idlist) : Node(Type::ProgramHead),
+                                                                                            program(
+                                                                                                    programKeyword),
+                                                                                            id(id), id_list(idlist) {
             if (idlist) copy_pos_between_tokens(this, programKeyword, idlist);
             else copy_pos_between_tokens(this, programKeyword, id);
         }
 
-        explicit ProgramHead(const ExpKeyword *programKeyword, Ident *id) :
-                Node(Type::ProgramHead), programKeyword(programKeyword), id(id), idlist(nullptr) {}
+        explicit ProgramHead(const Keyword *programKeyword, Ident *id) :
+                Node(Type::ProgramHead), program(programKeyword), id(id), id_list(nullptr) {}
 
         ~ProgramHead() {
             deleteAST(id);
-            deleteAST(idlist);
+            deleteAST(id_list);
         }
     };
 
 
     struct ProgramBody : public Node {
 
-        ConstDecls *constdecls;
+        ConstDecls *const_decls;
 
-        VarDecls *vardecls;
+        VarDecls *var_decls;
 
-        SubprogramDecls *subprogram;
+        SubprogramDecls *prog_decls;
 
         CompoundStatement *compound;
 
         explicit ProgramBody(ConstDecls *constdecls, VarDecls *vardecls, SubprogramDecls *subprogram,
                              CompoundStatement *compound) :
-                Node(Type::ProgramBody), constdecls(constdecls), vardecls(vardecls), subprogram(subprogram),
+                Node(Type::ProgramBody), const_decls(constdecls), var_decls(vardecls), prog_decls(subprogram),
                 compound(compound) {
             Node *l = constdecls;
             if (l == nullptr) l = vardecls;
@@ -866,9 +802,9 @@ namespace ast {
         }
 
         ~ProgramBody() {
-            deleteAST(constdecls);
-            deleteAST(vardecls);
-            deleteAST(subprogram);
+            deleteAST(const_decls);
+            deleteAST(var_decls);
+            deleteAST(prog_decls);
             deleteAST(compound);
         }
     };
@@ -878,26 +814,26 @@ namespace ast {
 
         Node fn_type;
 
-        ProgramHead *programHead;
+        ProgramHead *head;
 
         const Marker *semicolon;
 
-        ProgramBody *programBody;
+        ProgramBody *body;
 
         const Marker *dot = nullptr;
 
 
         explicit Program(ProgramHead *programHead, ProgramBody *programBody)
 
-                : Function(Type::Program), fn_type(Type::Program), programHead(programHead), programBody(programBody) {
+                : Function(Type::Program), fn_type(Type::Program), head(programHead), body(programBody) {
 
             copy_pos_between_tokens(this, programHead, programBody);
         }
 
 
         ~Program() {
-            deleteAST(programHead);
-            deleteAST(programBody);
+            deleteAST(head);
+            deleteAST(body);
         }
     };
 }

@@ -14,11 +14,11 @@ LLVMBuilder::Value *LLVMBuilder::code_gen_exp_call(const ast::ExpCall *pCall) {
                                               fmt::format("callee {} not found", pCall->fn->content));
         return nullptr;
     }
-    if (calleeFunc->arg_size() != pCall->params->explist.size()) {
+    if (calleeFunc->arg_size() != pCall->params->vec.size()) {
         llvm_pascal_s_report_semantic_error_n(
                 pCall->params, fmt::format(
                 "callee {} expected args size is {}, but length of expression list is {}",
-                pCall->fn->content, calleeFunc->arg_size(), pCall->params->explist.size()));
+                pCall->fn->content, calleeFunc->arg_size(), pCall->params->vec.size()));
         return nullptr;
     }
     std::vector<Value *> args;
@@ -31,15 +31,15 @@ LLVMBuilder::Value *LLVMBuilder::code_gen_exp_call(const ast::ExpCall *pCall) {
         Value *argument_value = nullptr;
         if (argument_proto->getType()->isPointerTy()) {
             // args[i] = gen_lvalue(call_stmt.args[i])
-            argument_value = get_lvalue_pointer(pCall->params->explist[i]);
+            argument_value = get_lvalue_pointer(pCall->params->vec[i]);
         } else {
             // args[i] = gen_rvalue(call_stmt.args[i])
-            argument_value = code_gen(pCall->params->explist[i]);
+            argument_value = code_gen(pCall->params->vec[i]);
         }
         if (argument_value == nullptr) {
             gen_exp_failed = true;
         } else if (argument_proto->getType() != argument_value->getType()) {
-            gen_exp_failed = check_extend_type(pCall->params->explist[i]->visit_pos(), argument_value,
+            gen_exp_failed = check_extend_type(pCall->params->vec[i]->visit_pos(), argument_value,
                                                argument_proto->getType());
         }
         args.push_back(argument_value);
