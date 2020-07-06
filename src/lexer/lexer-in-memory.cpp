@@ -1,8 +1,5 @@
 
-#include <iostream>
 #include <string_view>
-#include <cstdarg>
-#include <cstring>
 #include <pascal-s/logger.h>
 #include <pascal-s/token.h>
 #include <pascal-s/lexer.h>
@@ -29,11 +26,18 @@ void FullInMemoryLexer::reset_cursor() {
 
 const Token *FullInMemoryLexer::next_token() {
     if (current_token_cursor >= tokens.size()) {
-        auto code = yylex();
-        if (code == 1000) {
-            return next_token();
+        if (all_lexed) {
+            return nullptr;
         }
-        if (code == 0) {
+
+        lex_again:
+        auto code = yylex();
+        if (code == static_cast<lexer_action_code_underlying_type>(LexerActionCode::AuxFunctionCalled)) {
+            goto lex_again;
+        }
+        if (code == static_cast<lexer_action_code_underlying_type>(LexerActionCode::LexEnd)) {
+            if (current_token_cursor < tokens.size()) return tokens[current_token_cursor++];
+            all_lexed = true;
             return nullptr;
         }
     }
@@ -50,14 +54,32 @@ const Token *FullInMemoryLexer::peek_token() {
 }
 
 const FullInMemoryLexer::token_container &FullInMemoryLexer::get_all_tokens() {
-    while (yylex() != 0);
+    if (all_lexed) return tokens;
+
+    while (yylex() != static_cast<lexer_action_code_underlying_type>(LexerActionCode::LexEnd));
+    all_lexed = true;
     return tokens;
 }
 
+void FullInMemoryLexer::addError(ErrorToken *token) {
+    errors.push_back(token);
+}
+
+
 int FullInMemoryLexer::addToken(Token *token) {
     token->line = yylineno;
-    token->column = current_offset - line_offset - yyleng;
+    token->length = yyleng;
+    token->column = current_offset - yyleng - line_offset;
+    token->offset = current_offset - yyleng;
     tokens.push_back(token);
-    return 1;
+    return static_cast<lexer_action_code_underlying_type>(LexerActionCode::AppendToken);
+}
+
+const Lexer::error_references &FullInMemoryLexer::get_all_errors() {
+    return errors;
+}
+
+bool FullInMemoryLexer::has_error() {
+    return !errors.empty();
 }
 

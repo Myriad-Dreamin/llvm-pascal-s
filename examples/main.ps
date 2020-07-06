@@ -1,4 +1,18 @@
 program main;
+  var id: integer;
+  function swap_inner(id : integer): integer;
+    var main: integer;
   begin
+    swap_inner := main;
+    main := id;
+  end;
+  begin
+    id := 1;
     main := 1;
-  end
+    swap_inner(2);
+    write(id, swap_inner(3), main);
+    write(main);
+    main := 0;
+    write(id, swap_inner(1), main);
+    write(main);
+  end.

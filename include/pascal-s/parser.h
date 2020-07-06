@@ -7,76 +7,25 @@
 
 #include <vector>
 #include "interface.h"
-#include "ast.h"
+#include "llvm-ast.h"
 #include "exception.h"
 #include <set>
+#include <pascal-s/lib/guess.h>
 
-template<typename Lexer>
-class Parser {
-    LexerProxy<Lexer> lexer;
-    const Token* current_token;
+struct Parser {
 
-public:
-    std::vector<PascalSError*> errors;
+    using error_references = std::vector<PascalSError *>;
 
-    explicit Parser(LexerProxy<Lexer> lexer);
+    // 解析语法
+    virtual ast::Node *parse() = 0;
 
-    ast::Node *parse();
+    // 判断是否存在语法错误
+    virtual bool has_error() = 0;
 
-    ast::Program *parse_program_struct();
+    // 获取所有的语法错误
+    virtual const error_references &get_all_errors() = 0;
 
-    ast::IdentList *parse_id_list_with_paren();
-    ast::ParamList *parse_param_list_with_paren();
-    ast::VariableList *parse_variable_list_with_paren();
-
-    ast::IdentList *parse_id_list();
-    ast::ParamList *parse_param_list();
-
-    ast::ParamSpec *parse_param();
-
-    ast::VariableList *parse_variable_list();
-
-    ast::ConstDecls *parse_const_decls();
-
-    ast::ConstDecl *parse_const_decl();
-
-    ast::VarDecls *parse_var_decls();
-
-    ast::VarDecl *parse_var_decl();
-
-    ast::Procedure *parse_function_head();
-
-    ast::Procedure *parse_function_body(ast::Procedure *);
-
-    ast::FunctionDecls *parse_function_decls();
-
-    ast::TypeSpec *parse_type();
-
-    ast::ArrayTypeSpec *parse_array_type(const Keyword *keyword_array);
-
-    ast::Exp *parse_const_exp(const std::set<const Token *> *till = nullptr);
-
-    ast::Exp *parse_const_fac(const std::set<const Token *> *till = nullptr);
-
-    ast::Exp *parse_exp(const std::set<const Token *> *till = nullptr);
-
-    ast::Exp *parse_binary_exp(ast::Exp *lhs, const Marker *marker, marker_type_underlying_type current_marker_pri,
-                               const std::set<const Token *> *till = nullptr);
-
-    ast::Exp *parse_fac();
-
-    ast::Statement *parse_statement(std::set<const Token *> *till = nullptr);
-
-    const Token *next_token();
-
-private:
-    ast::IdentList *_parse_id_list(ast::IdentList *);
-
-    ast::ParamList *_parse_param_list(ast::ParamList *params);
-
-    ast::ConstDecls *_parse_const_decls(ast::ConstDecls *);
-    ast::VarDecls *_parse_var_decls(ast::VarDecls *);
-    ast::FunctionDecls *_parse_function_decls(ast::FunctionDecls *decls);
+    virtual ~Parser() {}
 };
 
 

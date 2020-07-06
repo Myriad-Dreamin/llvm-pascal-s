@@ -1,0 +1,23 @@
+program main;
+  var b : boolean;
+  c : integer;
+  procedure func1; begin end;
+  function func2 : integer; begin func2 := 1 end;
+  function func4 (a:real): integer;
+    var x : real;
+    begin
+        x := 5.0;
+        func4 := x;
+    end;
+  function id (a:integer): integer;
+    begin
+        id := a;
+    end;
+  begin
+    func4(b);
+    id;
+    id(b);
+    id(id(c));
+    id(id(func2));
+    id(id(a));
+  end.

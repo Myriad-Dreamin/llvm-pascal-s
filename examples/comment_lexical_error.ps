@@ -1,0 +1,10 @@
+program main; {cross line comment
+}
+    var b: array[0..-1] of integer; {a comment}
+    begin  // inline comment
+      a := a[]; // inline comment
+      {cross line comment not closed
+       a := a[]; // inline comment
+
+      // a := a[]; // some error commented
+    end.

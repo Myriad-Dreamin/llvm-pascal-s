@@ -5,6 +5,6 @@
 #ifndef PASCAL_S_LEXER_GULP_H
 #define PASCAL_S_LEXER_GULP_H
 
-#define YY_USER_ACTION current_offset += yyleng;
+#define YY_USER_ACTION if (yy_start == 1) current_offset += yyleng;
 
 #endif //PASCAL_S_GULP_H

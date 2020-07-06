@@ -1,0 +1,4 @@
+*.pyd
+*.lib
+*.exp
+*.ilk

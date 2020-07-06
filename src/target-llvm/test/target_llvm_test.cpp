@@ -36,7 +36,7 @@ TEST_P(GoodGenerateLLVMIRTest, WillNotThrowException) /* NOLINT */
     fflush(stdout);
 
     LexerProxy<FullInMemoryLexer> lexer_proxy(lexer);
-    Parser<FullInMemoryLexer> parser(lexer_proxy);
+Parser<FullInMemoryLexer> parser(lexer_proxy);
 
     auto node = parser.parse();
     printAST(node);
@@ -67,21 +67,21 @@ INSTANTIATE_TEST_SUITE_P(Simple, GoodGenerateLLVMIRTest, testing::Values( /* NOL
 //                               "    main := 0;\n"
 //                               "  end"}
 //                                   ,
-//        GenerateLLVMIRTestCase{"program main;\n"
-//                               " begin\n"
-//                               "   write_char('h');\n"
-//                               //               "   write_char('e');\n"
-//                               //               "   write_char('l');\n"
-//                               //               "   write_char('l');\n"
-//                               //               "   write_char('o');\n"
-//                               //               "   write_char(' ');\n"
-//                               //               "   write_char('w');\n"
-//                               //               "   write_char('o');\n"
-//                               //               "   write_char('r');\n"
-//                               //               "   write_char('l');\n"
-//                               //               "   write_char('d');\n"
-//                               "   main := 0;\n"
-//                               " end"}
+        GenerateLLVMIRTestCase{"program main;\n"
+                               " begin\n"
+                               "   write_char('h');\n"
+                               //               "   write_char('e');\n"
+                               //               "   write_char('l');\n"
+                               //               "   write_char('l');\n"
+                               //               "   write_char('o');\n"
+                               //               "   write_char(' ');\n"
+                               //               "   write_char('w');\n"
+                               //               "   write_char('o');\n"
+                               //               "   write_char('r');\n"
+                               //               "   write_char('l');\n"
+                               //               "   write_char('d');\n"
+                               "   main := 0;\n"
+                               " end"}
 //        GenerateLLVMIRTestCase{"program main;\n"
 //                               "  var a: integer;\n"
 //                               "  begin\n"
@@ -95,18 +95,18 @@ INSTANTIATE_TEST_SUITE_P(Simple, GoodGenerateLLVMIRTest, testing::Values( /* NOL
 //                               "     end\n"
 //                               "    main := 0;\n"
 //                               "  end"},
-        GenerateLLVMIRTestCase{"program example();\n"
-                               "    var x,y:integer;\n"
-                               "    function gcd(a,b:integer):integer;\n"
-                               "        begin\n"
-                               "            if b=0 then gcd:=a\n"
-                               "            else gcd:=gcd(b, a mod b)\n"
-                               "        end\n"
-                               "    begin\n"
-                               "        read_int64(x);\n"
-                               "        read_int64(y);\n"
-                               "        write_int64(gcd(x, y))\n"
-                               "    end"}
+//        GenerateLLVMIRTestCase{"program example();\n"
+//                               "    var x,y:integer;\n"
+//                               "    function gcd(a,b:integer):integer;\n"
+//                               "        begin\n"
+//                               "            if b=0 then gcd:=a\n"
+//                               "            else gcd:=gcd(b, a mod b)\n"
+//                               "        end\n"
+//                               "    begin\n"
+//                               "        read_int64(x);\n"
+//                               "        read_int64(y);\n"
+//                               "        write_int64(gcd(x, y))\n"
+//                               "    end"}
 ));
 
 

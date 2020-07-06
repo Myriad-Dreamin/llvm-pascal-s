@@ -1,0 +1,11 @@
+program main;
+    var a: array[0..10] of integer;
+    b: real;
+    begin
+        b := 10.0;
+        a[1.1] := 5;
+        a[0] := 5.0;
+        a[0, 2] := 5;
+        a[0] := a[0] + b;
+        for i := 0.0 to 10.0 do read(a[i]);
+    end.

@@ -15,6 +15,7 @@
 #endif
 
 #if later_than_cxx14
+#include <string_view>
 using string_view = std::string_view;
 using string_view_return = std::string_view;
 #else

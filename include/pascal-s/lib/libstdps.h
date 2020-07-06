@@ -10,10 +10,14 @@
 extern "C" {
 
 int32_t read_char(char *s);
+int32_t read_bool(int8_t *s);
+int32_t read_int32(int32_t *s);
 int32_t read_int64(int64_t *s);
 int32_t read_real(double *s);
 
 int32_t write_char(char s);
+int32_t write_bool(int8_t s);
+int32_t write_int32(int32_t s);
 int32_t write_int64(int64_t s);
 int32_t write_real(double s);
 

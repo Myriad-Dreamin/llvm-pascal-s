@@ -1,6 +1,6 @@
 
 cmake_minimum_required(VERSION 3.15)
-project(pascal-s)
+project(llvm-pascal-s)
 
 function(add_exception_test test_name)
     add_gtest(${test_name})

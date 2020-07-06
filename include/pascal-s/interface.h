@@ -6,8 +6,9 @@
 #define PASCAL_S_INTERFACE_H
 
 #include "token.h"
-#include "ast.h"
 #include <vector>
+#include "lib/stdtype.h"
+#include "exception.h"
 
 // reserve lvalue reference semantics
 // ProxyTarget
@@ -26,6 +27,10 @@
         proxy_field = p.proxy_field;\
         return *this; }
 
+#define DefineVisitProperty(obj, prop_type, prop) [[maybe_unused]] [[nodiscard]] prop_type visit_ ##prop() const {\
+    return obj.prop;\
+}
+
 // auto generated LexerProxy struct
 // you can partially specialize a specified type to change proxy behavior
 template<typename Lexer>
@@ -33,6 +38,7 @@ struct LexerProxy {
     DefaultProxyConstructor(LexerProxy, Lexer, lexer)
 
     using token_container = std::vector<Token *>;
+    using error_references = std::vector<ErrorToken *>;
 
     // cursor控制peek_token的值
 
@@ -47,13 +53,21 @@ struct LexerProxy {
 
     // 获取所有的token
     [[maybe_unused]] const token_container &get_all_tokens() { return lexer.get_all_tokens(); }
+
+    // 获取所有的词法错误
+    [[maybe_unused]] const error_references &get_all_errors() { return lexer.get_all_errors(); }
+
+    // 判断是否存在词法错误
+    [[maybe_unused]] bool has_error() { return lexer.has_error(); }
 };
+
+using pascal_errno = int;
 
 // auto generated OStreamProxy struct
 // you can partially specialize a specified type to change proxy behavior
 template<typename OStream>
-struct OStreamProxy {
-    DefaultProxyConstructor(OStreamProxy, OStream, os)
+struct WriterProxy {
+    DefaultProxyConstructor(WriterProxy, OStream, os)
 
     // 定义一个OStream 为 operator<<(T data)
 
@@ -61,33 +75,82 @@ struct OStreamProxy {
 
     // 重置cursor
     template<typename T>
-    [[maybe_unused]] OStreamProxy &operator<<(T data) {
+    [[maybe_unused]] WriterProxy &operator<<(T data) {
         os << data;
         return *this;
     }
 
-    [[maybe_unused]] OStreamProxy &write_data(const char *data) {
+    [[maybe_unused]] WriterProxy &write_data(const char *data) {
         return operator<<(data);
     }
 
-    [[maybe_unused]] OStreamProxy &write_data(const std::string &data) {
+    [[maybe_unused]] WriterProxy &write_data(char *const data) {
+        return operator<<(data);
+    }
+
+    [[maybe_unused]] WriterProxy &write_data(const std::string &data) {
         return operator<<(data.c_str());
     }
 
     template<typename T>
-    [[maybe_unused]] OStreamProxy &write_data(const T &data) {
+    [[maybe_unused]] WriterProxy &write_data(const T &data) {
         return operator<<(data.c_str());
     }
+};
+
+// auto generated OStreamProxy struct
+// you can partially specialize a specified type to change proxy behavior
+template<typename File>
+struct FileProxy {
+    DefaultProxyConstructor(FileProxy, File, f)
+
+    [[maybe_unused]] pascal_errno seek(size_t offset) {
+        return f.seek(offset);
+    }
+
+    [[maybe_unused]] pascal_errno read(char *buf, size_t len) {
+        return f.read(buf, len);
+    }
+
+    template<typename OStream>
+    [[maybe_unused]] pascal_errno read(WriterProxy<OStream> buf, size_t len) {
+        return f.read(buf, len);
+    }
+};
+
+// auto generated ErrorProxy struct
+// you can partially specialize a specified type to change proxy behavior
+template<typename Error>
+struct ErrorProxy {
+    DefaultProxyConstructor(ErrorProxy, Error, err)
+
+    DefineVisitProperty(err, pascal_s::line_t, line)
+
+    DefineVisitProperty(err, pascal_s::column_t, column)
+
+    DefineVisitProperty(err, pascal_s::length_t, length)
+
+    DefineVisitProperty(err, pascal_s::offset_t, offset)
+    // 如果没有hint，为nullptr
+    DefineVisitProperty(err, const char *, hint)
 };
 
 template<typename Parser>
 struct ParserProxy {
     DefaultProxyConstructor(ParserProxy, Parser, parser)
 
+    using error_references = std::vector<PascalSError *>;
+
     // cursor控制peek_token的值
 
-    // 重置cursor
+    // 解析语法
     [[maybe_unused]] ast::Node *parse() { return parser.parse(); }
+
+    // 判断是否存在语法错误
+    [[maybe_unused]] bool has_error() { return parser.has_error(); }
+
+    // 获取所有的语法错误
+    [[maybe_unused]] const error_references &get_all_errors() { return parser.get_all_errors(); }
 };
 
 #endif //PASCAL_S_INTERFACE_H

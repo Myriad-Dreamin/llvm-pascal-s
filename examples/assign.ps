@@ -1,0 +1,16 @@
+program main;
+  var a : integer;
+  b : char;
+  c : array[0..1] of integer;
+  begin
+    a := main := 1;
+    main := a := 1;
+    main := a;
+    write(a, main);
+    main := 0;
+    write(a, main);
+    main := 0;
+    c[1] := b := a;
+    c[1] := (b := ps_int64_to_char(a));
+    b := ps_int64_to_char(a);
+  end.

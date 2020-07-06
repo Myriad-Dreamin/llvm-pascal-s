@@ -1,0 +1,16 @@
+program main;
+    var a: array[0..1] of integer;
+    b: integer;
+    c: real;
+    d: boolean;
+    e: char;
+    function func2 : integer; begin func2 := 1 end;
+    begin
+      write(a, b, c, a, d, e);
+      write(a + b, b + c, b + d, b + e, c + d, c + e, d + e);
+      write(b + b, c + c, a + a, d + d, e + e);
+      write(b and b, c and c ,a and a, d and d, e and e);
+      write(a and b, b and c, b and d, c and d, d and d, d and e);
+      f := 1;
+      func2() := 1;
+    end.

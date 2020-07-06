@@ -1,6 +1,6 @@
 
 cmake_minimum_required(VERSION 3.15)
-project(pascal-s)
+project(llvm-pascal-s)
 
 add_definitions(-DWITH_PASCAL_LEXER_FILES)
 add_gtest(target_llvm_test

@@ -1,0 +1,16 @@
+program main;
+    function setter(a, b: integer; rec: boolean) : integer;
+    var x : array [0..1] of integer;
+    begin
+        if rec then
+            begin
+            x[1] := a;
+            setter(a, b, false);
+            end
+        else
+            x[1] := b;
+        setter := x[1];
+    end;
+    begin
+        write(setter(1, 2, true), ' ', setter(1, 2, false));
+    end.

@@ -1,28 +1,45 @@
-program sort (input, output);
-  var a: array[0..10] of integer;
-  x : integer;
-procedure read_array;
-  var i: integer;
-  begin
-    for i := 1 to 9 do read(a[i])
-  end;
-procedure exchange (i, j: integer)
-  begin
-    x := a[i]; a[i] := a[j]; a[j] := x;
-  end
+program qsort(input,output);
+var
+	n,i:integer;
+	list:array[0..1000] of integer;
+	c:char;
+procedure quicksort(low, high:integer);
+var
+	l,h,m:integer;
+	i,j:integer;
+	temp:integer;
+	flag:integer;
+begin
+	flag:=0;
+	l:=low; h:=high;
+	m:=list[(l+h) div 2];
+	for i:=1 to 1000 do
+	begin
+	if flag=0 then begin
+		for j:=1 to 1000 do
+			if list[l]<m then l:=l+1;
+		for j:=1 to 1000 do
+			if list[h]>m then h:=h-1;
+		if l<=h then
+		begin
+			temp:=list[l]; list[l]:=list[h]; list[h]:=temp;
+			l:=l+1; h:=h-1;
+		end;
+		if (l>h) then flag:=1;
+	end;
+	end;
+	if l<high then quicksort(l,high);
+	if h>low then quicksort(low,h);
+end;
 
-procedure quick_sort(m, n: integer);
-  var k, v: integer;
-
-  function partition(y, z: integer) : integer;
-    var i, j : integer;
-    begin
-      exchange(i, j);
-    end
-  begin
-    k = partition(m, n);
-    quick_sort(m, k-1);
-    quick_sort(k+1, n);
-  end; { quick_sort end }
-  begin read_array; quick_sort(1, 9);
-  end {sort}
+begin
+	read(n);
+	for i:=0 to n-1 do
+		read(list[i]);
+	quicksort(0,n-1);
+        for i:=0 to n-1 do
+        begin
+            write(list[i]);
+        end;
+    qsort := 0;
+end.

@@ -4,6 +4,7 @@
 
 #include <dep/stl.h>
 #include <fmt/core.h>
+#include <iostream>
 
 struct Logger {
 
